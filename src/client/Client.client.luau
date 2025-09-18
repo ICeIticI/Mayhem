@@ -1,0 +1,1 @@
+require(game.ReplicatedStorage.Shared.client_modules.ClientVariables)
