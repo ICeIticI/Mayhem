@@ -1,17 +1,21 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local utilities = require(game.ReplicatedStorage.Shared.utilities)
+local Gun = require(game.ReplicatedStorage.Shared.server_modules.Gun)
+
 local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")
-local RemoteFunction = ReplicatedStorage:WaitForChild("RemoteFunction")
 
-local function receiveServerEvent(protocol, data)
-    
-end
+local function receiveServerEvent(plr, protocol, data)
+    if protocol == "input" then
+        local inputType = utilities.checkInput(data.input)
+        if not inputType then return end
 
-local function receiveServerInvoke(protocol, data)
-    print("test")
+        if inputType == "ReloadInputs" then
+            Gun.activeGuns[plr.Name]:Reload()
+        end
+    end
 end
 
 RemoteEvent.OnServerEvent:Connect(receiveServerEvent)
-RemoteFunction.OnServerInvoke = receiveServerInvoke
 
 return 0

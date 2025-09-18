@@ -4,8 +4,9 @@ local ServerStorage = game:GetService("ServerStorage")
 local FastCast = require(game.ServerScriptService.FastCastRedux) -- require is how we use the data in module scripts
 local partCache = require(game.ServerScriptService.PartCache) -- used to reduce lag. Stores bullets far from the map being played on
 
+local utilities = require(game.ReplicatedStorage.Shared.utilities)
+
 local RemoteEvent = game.ReplicatedStorage:WaitForChild("RemoteEvent")
-local RemoteFunction = game.ReplicatedStorage:WaitForChild("RemoteFunction")
 
 local Gun = {}
 Gun.__index = Gun
@@ -51,7 +52,10 @@ local chamberCache = partCache.new(createChamberTemplate(Vector3.new(0.284, 0.07
 local GunToolPresets = ServerStorage:WaitForChild("GunToolPresets")
 Gun.gunPresets = {
 	AK15_Preset = {
+		name = "AK-15",
 		tool = GunToolPresets.AK15,
+
+		fireRate = 0.0857,
 
 		magCurrent = 30, -- how many bullets are currently in the clip
 		magCapacity = 30, -- how many bullets can fit in a clip
@@ -81,13 +85,16 @@ chamberBehavior.AutoIgnoreContainer = false
 chamberBehavior.CosmeticBulletContainer = chamberFolder
 chamberBehavior.CosmeticBulletProvider = chamberCache
 
+Gun.activeGuns = {}
+
 function Gun.new(character, config)
 	local self = setmetatable({}, Gun)
 
 	self.shooter = character
 	self.plr = Players:GetPlayerFromCharacter(self.shooter)
 
-	self.tool = config.tool
+	self.name = config.name
+	self.tool = config.tool:Clone()
 
 	-- Parts:
 
@@ -98,6 +105,8 @@ function Gun.new(character, config)
 	self.isReloading = false
 	self.isHolding = false -- whether or not the trigger is being held down
 	self.isEquipped = false
+
+	self.fireRate = config.fireRate
 
 	-- Ammo:
 
@@ -113,8 +122,8 @@ function Gun.new(character, config)
 
 	-- Folders:
 
-	self.Gun_Sounds = self.tool:WaitForChild("Gun_Sounds")
-	self.Animations = self.tool:WaitForChild("Animations")
+	self.Gun_Sounds = utilities.makeDictionaryFromFolder(self.tool:WaitForChild("Sounds"))
+	self.Animations = utilities.makeAnimationTracksFromAnimations(self.tool:WaitForChild("Animations"):GetChildren(), self.shooter:WaitForChild("Humanoid"):WaitForChild("Animator"))
 
 	-- FastCast:
 	
@@ -126,22 +135,50 @@ function Gun.new(character, config)
 	self.bulletFlash = self.firePoint.bulletFlash
 	self.bulletSmoke = self.firePoint.bulletSmoke
 
+	self.tool.Equipped:Connect(function()
+		self:Equip()
+	end)
+	self.tool.Unequipped:Connect(function()
+		self:Unequip()
+	end)
+	self.tool.Activated:Connect(function()
+		self:Activate()
+	end)
+	self.tool.Deactivated:Connect(function()
+		self:Deactivate()
+	end)
+
+	self.bulletCaster.LengthChanged:Connect(function(cast, lastPoint, direction, length, velocity, chamber)
+		self:ChangeBulletRaycastLength(cast, lastPoint, direction, length, velocity, chamber)
+	end)
+	self.bulletCaster.RayHit:Connect(function(cast, result, velocity, bullet)
+		self:BulletImpact(cast, result, velocity, bullet)
+	end)
+	
+	self.chamberCaster.LengthChanged:Connect(function(cast, lastPoint, direction, length, velocity, chamber)
+		self:ChangeChamberRaycastLength(cast, lastPoint, direction, length, velocity, chamber)
+	end)
+	self.chamberCaster.RayHit:Connect(function(cast, result, velocity, bullet)
+		self:ChamberImpact(cast, result, velocity, bullet)
+	end)
+
+	Gun.activeGuns[self.shooter.Name --[[.. "_" .. self.name]] ] = self
 	return self
 end
 
 
-function Gun:Fire(mousePosition)
+function Gun:Fire()
 	if self.magCurrent > 0 and self.isReloading == false then
 		
 		local startPosition = self.firePoint.WorldPosition -- dont use position on attachments because position is relative. Instead, use WorldPosition (the 3D position)
 		local otherStartPosition = self.chamberPoint.WorldPosition
-		local direction = (mousePosition - startPosition).Unit
-		local otherDirection = (self.tool.body.CFrame.LookVector).Unit
+		local direction = (self.firePoint.WorldCFrame.LookVector).Unit
+		local otherDirection = (self.tool.Mesh.Body.CFrame.LookVector).Unit
 		
 		self.bulletCaster:Fire(startPosition, direction, 1000, castBehavior) -- like a normal raycast, with the startPosition as the first parameter, and the direction as the second. Except the third parameter is a velocity value. It can be a number, or a Vector3 value
 		self.chamberCaster:Fire(otherStartPosition, otherDirection, 10, chamberBehavior)
-		self.Gun_Sounds.gunShotSFX:Play()
-		self.Animations.recoilTrack:Play()
+		self.Gun_Sounds.Gunshot:Play()
+		self.Animations.Recoil:Play()
 		self.bulletFlash.Enabled = true
 		delay(0.1, function()
 		self.bulletFlash.Enabled = false
@@ -178,8 +215,8 @@ function Gun:Reload()
 			RemoteEvent:FireClient(self.plr, "iconChange", {magCurrent = self.magCurrent, isEquipped = self.isEquipped})
 		end
 
-		self.Animations.reloadTrack:Play()
-		self.Gun_Sounds.reloadSFX:Play()
+		self.Animations.Reload:Play()
+		self.Gun_Sounds.Reload:Play()
 		wait(1.25)
 		self.mag.Transparency = 1
 		wait(0.25)
@@ -203,13 +240,13 @@ function Gun:Reload()
 		
 	elseif self.magCurrent < self.magCapacity and self.isReloading == false and self.ammoCurrent > 0 then -- tactical reload for when the mag is only partially empty
 		
-		local tacticalReloadSFX = self.Gun_Sounds.reloadSFX:Clone()
-		tacticalReloadSFX.Parent = self.Gun_Sounds.reloadSFX.Parent
+		local tacticalReloadSFX = self.Gun_Sounds.Reload:Clone()
+		tacticalReloadSFX.Parent = self.Gun_Sounds.Reload.Parent
 		
 		if not tacticalReloadSFX.IsLoaded then
 			tacticalReloadSFX.Loaded:Wait()
 		end
-		self.Animations.tactTrack:Play()
+		self.Animations.Tact_Reload:Play()
 		tacticalReloadSFX:Play()
 		
 		delay(2.3, function()
@@ -249,18 +286,26 @@ end
 
 function Gun:Equip()
 	self.isEquipped = true
+	self.Animations.Idle:Play()
 	params.FilterDescendantsInstances = {self.tool.Parent, bulletsFolder, chamberFolder}
-	self.Gun_Sounds.equipSFX:Play()
+	self.Gun_Sounds.Equip:Play()
 end
 
 function Gun:Unequip()
 	self.isEquipped = false
+	self.Animations.Idle:Stop()
 end
 
 function Gun:Activate()
 	self.isHolding = true
 	if self.magCurrent == 0 and self.isReloading == false then
-		self.Gun_Sounds.emptyMagSFX:Play()
+		self.Gun_Sounds.EmptyMag:Play()
+	elseif self.magCurrent > 0 and not self.isReloading then
+
+		while self.isHolding do
+			self:Fire()
+			task.wait(self.fireRate)
+		end
 	end
 end
 
@@ -268,8 +313,51 @@ function Gun:Deactivate()
 	self.isHolding = false
 end
 
-function Gun:ChangeBulletRaycastLength()
+function Gun:ChangeBulletRaycastLength(cast, lastPoint, direction, length, velocity, bullet)
+	if bullet then
+		local newAngles =  CFrame.Angles(0,math.rad(90),0)
+		local bulletLength = bullet.Size.Z/2
+		local offset = CFrame.new(0,0,-(length - bulletLength)) -- the length argument is the length of the segment of a Raycast. When the .VisualizeCasts property is enabled, you see a bunch of segments on a raycast. We want to offset our bullet so it doesn't go past each segment. If the bullet hits a wall, for example, we dont want the bullet to phaze through the wall; we want it to stay behind it.
+		bullet.CFrame = CFrame.lookAt( lastPoint, lastPoint + direction ):ToWorldSpace(offset) -- Here, we have lastPoint, then we look towards the direction that the bullets going, which is done by adding lastPoint to direction. Then we add our CFrame offset relative to this CFrame by using :ToWorldSpace, which converts our offset to this CFrame
+		bullet.CFrame = bullet.CFrame * newAngles
+	end
+end
+
+function Gun:BulletImpact(cast, result, velocity, bullet)
+
+	local rayInstance = result.Instance -- oddly, FastCast results are never nil, so this line of code is safe
 	
+	if rayInstance == rayInstance.Parent:FindFirstChild("Head") and rayInstance.Parent:FindFirstChild("Humanoid").Health > 0 then
+		print("You hit "..tostring(rayInstance.Parent) .." by headshot!")
+		RemoteEvent:FireClient(self.plr, "characterHit", {hitSFX = self.Gun_Sounds.Hit, headSheadshotSFX = self.Gun_Sounds.Headshot, rayInstance = rayInstance})
+		rayInstance.Parent.Humanoid:TakeDamage(80)
+	elseif rayInstance.Parent:FindFirstChild("Humanoid") and rayInstance.Parent:FindFirstChild("Humanoid").Health > 0 then
+		print("You hit "..tostring(rayInstance.Parent) .."'s "..tostring(rayInstance.Name))
+		RemoteEvent:FireClient(self.plr, "characterHit", {hitSFX = self.Gun_Sounds.Hit, headSheadshotSFX = self.Gun_Sounds.Headshot, rayInstance = rayInstance})
+		rayInstance.Parent.Humanoid:TakeDamage(40)
+	end
+	
+	delay(1.25, function() -- delay is like wait(), but instead it doesn't yield the entire script, and will be like a wait() on a seperate thread.
+		bulletCache:ReturnPart(bullet)
+	end)
+end
+
+function Gun:ChangeChamberRaycastLength(cast, lastPoint, direction, length, velocity, chamber)
+	if chamber then
+		local newAngles =  CFrame.Angles(0,math.rad(180),0)
+		local bulletLength = chamber.Size.Z/2
+		local offset = CFrame.new(0,0,-(length - bulletLength)) -- the length argument is the length of the segment of a Raycast. When the .VisualizeCasts property is enabled, you see a bunch of segments on a raycast. We want to offset our bullet so it doesn't go past each segment. If the bullet hits a wall, for example, we dont want the bullet to phaze through the wall; we want it to stay behind it.
+		chamber.CFrame = CFrame.lookAt( lastPoint, lastPoint + direction ):ToWorldSpace(offset) -- Here, we have lastPoint, then we look towards the direction that the bullets going, which is done by adding lastPoint to direction. Then we add our CFrame offset relative to this CFrame by using :ToWorldSpace, which converts our offset to this CFrame
+		chamber.CFrame = chamber.CFrame * newAngles
+	end
+end
+
+function Gun:ChamberImpact(cast, result, velocity, chamber)
+	self.Gun_Sounds.ChamberDrop.Parent = chamber
+	self.Gun_Sounds.ChamberDrop:Play()
+	delay(1.25, function()
+		chamberCache:ReturnPart(chamber)
+	end)
 end
 
 return Gun
