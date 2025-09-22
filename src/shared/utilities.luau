@@ -3,13 +3,13 @@
      module.]]
 
 local Utilities = {}
-Utilities.__index = Utilities
 
 Utilities.userInputTypes = {
     -- User Input Types
-ShootInputs = {[Enum.UserInputType.MouseButton1] = true, [Enum.KeyCode.ButtonR2] = true},
-ReloadInputs = {[Enum.KeyCode.R] = true, [Enum.KeyCode.ButtonX] = true}
--- AimInputs = {[Enum.UserInputType.MouseButton2] = true, [Enum.KeyCode.ButtonL2] = true},
+    ShootInputs = {[Enum.UserInputType.MouseButton1] = true, [Enum.KeyCode.ButtonR2] = true},
+    ReloadInputs = {[Enum.KeyCode.R] = true, [Enum.KeyCode.ButtonX] = true},
+    SprintInputs = {[Enum.KeyCode.LeftShift] = true, [Enum.KeyCode.Thumbstick1] = true}
+    -- AimInputs = {[Enum.UserInputType.MouseButton2] = true, [Enum.KeyCode.ButtonL2] = true},
 }
 
 function Utilities.checkInput(input)
@@ -64,6 +64,20 @@ function Utilities.multiplyTableValuesTogether(tbl)
     return newProduct
 end
 
+function Utilities.createInstance(instanceName: string, properties : dictionary) -- One-liner version of creating an instance
+    local newInstance = Instance.new(instanceName)
+    print(newInstance)
+    for i, v in pairs(properties) do
+        if newInstance then
+            newInstance[i] = v
+        else
+            warn("No property " .. i .. " for " .. newInstance.Name .. ". Instance type: " .. instanceName)
+        end
+    end
+
+    return newInstance
+end
+
 function Utilities.makeAnimationTracksFromAnimations(animationsTable, animator)
     local tracksTable = {}
     for _, animation in pairs(animationsTable) do
@@ -72,5 +86,30 @@ function Utilities.makeAnimationTracksFromAnimations(animationsTable, animator)
 
     return tracksTable
 end
+
+--[[
+	Searches the children of a given instance for one that matches all specified attributes.
+	@param parent Instance - The parent to search within.
+	@param attributeCriteria table - A dictionary of attribute key-value pairs to match.
+	@return Instance? - The first matching child, or nil if none found.
+]]
+function Utilities.FindChildByAttributes(parent: Instance, attributeCriteria: { [string]: any }): Instance?
+	for _, child in ipairs(parent:GetChildren()) do
+		local matchesAll = true
+		for key, expectedValue in pairs(attributeCriteria) do
+			local actualValue = child:GetAttribute(key)
+			if actualValue ~= expectedValue then
+				matchesAll = false
+				break
+			end
+		end
+		if matchesAll then
+            print("Found it!")
+			return child
+		end
+	end
+	return nil
+end
+
 
 return Utilities

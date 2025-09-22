@@ -5,6 +5,10 @@ local RemoteEvent = Instance.new("RemoteEvent")
 RemoteEvent.Name = "RemoteEvent"
 RemoteEvent.Parent = ReplicatedStorage
 
+local RemoteFunction = Instance.new("RemoteFunction")
+RemoteFunction.Name = "RemoteFunction"
+RemoteFunction.Parent = ReplicatedStorage
+
 require(game.ReplicatedStorage.Shared.server_modules.server_events) -- Activate remote event & function listeners on the server-side
 local Gun = require(game.ReplicatedStorage.Shared.server_modules.Gun)
 local Gun_m6dManager = require(game.ReplicatedStorage.Shared.server_modules.Gun_m6dManager)

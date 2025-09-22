@@ -3,10 +3,12 @@ local ServerStorage = game:GetService("ServerStorage")
 
 local FastCast = require(game.ServerScriptService.FastCastRedux) -- require is how we use the data in module scripts
 local partCache = require(game.ServerScriptService.PartCache) -- used to reduce lag. Stores bullets far from the map being played on
+local WeaponsMarket = require(game.ReplicatedStorage.Shared.server_modules.WeaponsMarket)
 
 local utilities = require(game.ReplicatedStorage.Shared.utilities)
 
 local RemoteEvent = game.ReplicatedStorage:WaitForChild("RemoteEvent")
+local RemoteFunction = game.ReplicatedStorage:WaitForChild("RemoteFunction")
 
 local Gun = {}
 Gun.__index = Gun
@@ -35,6 +37,19 @@ local function createChamberTemplate(size : Vector3)
 	return chamberTemplate
 end
 
+local function recoverStamina(gun)
+	gun.shooter.Humanoid.WalkSpeed /= gun.sprintSpeedMultiplier
+	
+	for i = gun.currentSprintStamina, gun.sprintStamina, 1 do
+		if gun.currentSprintStamina >= gun.sprintStamina then return end
+		
+		gun.currentSprintStamina = i
+		if gun.isSprintPressed then break end
+		task.wait(0.1)
+		print(gun.currentSprintStamina)
+	end
+end
+
 -- Creaitng folders to store bullets and it's chambers:
 
 local bulletsFolder = Instance.new("Folder") -- the point of creating a folder via code is so the gun wont have any external dependencies (meaning it relies on other pre-created things to work), which wouln't work if uploaded to workspace. This checks if there already is a BulletsFolder, and if not, it will create its own.
@@ -53,9 +68,11 @@ local GunToolPresets = ServerStorage:WaitForChild("GunToolPresets")
 Gun.gunPresets = {
 	AK15_Preset = {
 		name = "AK-15",
+		description = "Assault Rifle descended from the legendary AK-47 modernized.",
 		tool = GunToolPresets.AK15,
 
 		fireRate = 0.0857,
+		sprintSpeedMultiplier = 1.5, -- May change in the future, especially if attachments cause weigh-down, but not our concern as of now.
 
 		magCurrent = 30, -- how many bullets are currently in the clip
 		magCapacity = 30, -- how many bullets can fit in a clip
@@ -94,7 +111,10 @@ function Gun.new(character, config)
 	self.plr = Players:GetPlayerFromCharacter(self.shooter)
 
 	self.name = config.name
+	self.description = config.description
 	self.tool = config.tool:Clone()
+	self.tool:SetAttribute("Gun", true)
+	self.tool.Name = self.name
 
 	-- Parts:
 
@@ -104,9 +124,15 @@ function Gun.new(character, config)
 
 	self.isReloading = false
 	self.isHolding = false -- whether or not the trigger is being held down
+	self.isSprintPressed = false
 	self.isEquipped = false
 
+	-- Numbers:
+
 	self.fireRate = config.fireRate
+	self.sprintSpeedMultiplier = config.sprintSpeedMultiplier
+	self.sprintStamina = 100
+	self.currentSprintStamina = self.sprintStamina
 
 	-- Ammo:
 
@@ -124,6 +150,7 @@ function Gun.new(character, config)
 
 	self.Gun_Sounds = utilities.makeDictionaryFromFolder(self.tool:WaitForChild("Sounds"))
 	self.Animations = utilities.makeAnimationTracksFromAnimations(self.tool:WaitForChild("Animations"):GetChildren(), self.shooter:WaitForChild("Humanoid"):WaitForChild("Animator"))
+	self.Values = self.tool:FindFirstChild("Values") or utilities.createInstance("Folder", {Name = "Values", Parent = self.tool})
 
 	-- FastCast:
 	
@@ -134,6 +161,9 @@ function Gun.new(character, config)
 
 	self.bulletFlash = self.firePoint.bulletFlash
 	self.bulletSmoke = self.firePoint.bulletSmoke
+	self.shootDebounce = utilities.createInstance("BoolValue", {Name = "shootDebounce", Value = false, Parent = self.Values})
+
+	-- Connections:
 
 	self.tool.Equipped:Connect(function()
 		self:Equip()
@@ -167,43 +197,49 @@ function Gun.new(character, config)
 end
 
 
-function Gun:Fire()
-	if self.magCurrent > 0 and self.isReloading == false then
-		
-		local startPosition = self.firePoint.WorldPosition -- dont use position on attachments because position is relative. Instead, use WorldPosition (the 3D position)
-		local otherStartPosition = self.chamberPoint.WorldPosition
-		local direction = (self.firePoint.WorldCFrame.LookVector).Unit
-		local otherDirection = (self.tool.Mesh.Body.CFrame.LookVector).Unit
-		
-		self.bulletCaster:Fire(startPosition, direction, 1000, castBehavior) -- like a normal raycast, with the startPosition as the first parameter, and the direction as the second. Except the third parameter is a velocity value. It can be a number, or a Vector3 value
-		self.chamberCaster:Fire(otherStartPosition, otherDirection, 10, chamberBehavior)
-		self.Gun_Sounds.Gunshot:Play()
-		self.Animations.Recoil:Play()
-		self.bulletFlash.Enabled = true
-		delay(0.1, function()
-		self.bulletFlash.Enabled = false
-		end)
-		delay(3, function()
-			for i = 0,300,1 do
-				if self.isHolding ~= true then
-					break			
-				elseif i == 300 then
-					--print(i)
-					self.bulletSmoke.Enabled = true
-					delay(15,function()
-						self.bulletSmoke.Enabled = false
-					end)
-				end
-			end
-		end)
-	-- running this FastCast alone wouldn't do anything visually. This is why we enabled the .VisualizeCasts property so we can see an example of what would happen
-		self.magCurrent = self.magCurrent - 1
-
-		self.plr = Players:GetPlayerFromCharacter(self.shooter)
-		
-		if not self.plr then return end
-		RemoteEvent:FireClient(self.plr, "changeUiDisplay", {magCurrent = self.magCurrent, magCapacity = self.magCapacity})
+function Gun:Fire(ray)
+	
+	if self.magCurrent <= 0
+	or self.isReloading
+	or self.shootDebounce.Value
+	then
+		return false
 	end
+	
+	local endPoint = ray.Origin + ray.Direction * 1000
+		
+	local startPosition = self.firePoint.WorldPosition -- dont use position on attachments because position is relative. Instead, use WorldPosition (the 3D position)
+	local otherStartPosition = self.chamberPoint.WorldPosition
+	local direction = (endPoint - startPosition).Unit
+	local otherDirection = (self.tool.Mesh.Body.CFrame.LookVector).Unit
+	
+	self.bulletCaster:Fire(startPosition, direction, 1000, castBehavior) -- like a normal raycast, with the startPosition as the first parameter, and the direction as the second. Except the third parameter is a velocity value. It can be a number, or a Vector3 value
+	self.chamberCaster:Fire(otherStartPosition, otherDirection, 10, chamberBehavior)
+	self.Gun_Sounds.Gunshot:Play()
+	self.Animations.Recoil:Play()
+	self.bulletFlash.Enabled = true
+	delay(0.1, function()
+	self.bulletFlash.Enabled = false
+	end)
+	delay(3, function()
+		for i = 0,300,1 do
+			if self.isHolding ~= true then
+				break			
+			elseif i == 300 then
+				--print(i)
+				self.bulletSmoke.Enabled = true
+				delay(15,function()
+					self.bulletSmoke.Enabled = false
+				end)
+			end
+		end
+	end)
+-- running this FastCast alone wouldn't do anything visually. This is why we enabled the .VisualizeCasts property so we can see an example of what would happen
+	self.magCurrent = self.magCurrent - 1
+	
+	if not self.plr then return true end
+	RemoteEvent:FireClient(self.plr, "changeUiDisplay", {magCurrent = self.magCurrent, magCapacity = self.magCapacity})
+	return true
 end
 
 function Gun:Reload()
@@ -224,11 +260,11 @@ function Gun:Reload()
 		wait(2)
 		-- total wait() time should equal: 3.5
 		
-		if self.ammoCurrent >= 30 then
+		if self.ammoCurrent >= self.magCapacity then
 			local loss = self.magCapacity - self.magCurrent
 			self.magCurrent = self.magCapacity
 			self.ammoCurrent = self.ammoCurrent - loss
-		elseif self.ammoCurrent < 30 then
+		elseif self.ammoCurrent < self.magCapacity then
 			self.magCurrent = self.ammoCurrent
 			self.ammoCurrent = self.ammoCurrent - self.ammoCurrent
 		end
@@ -276,7 +312,7 @@ function Gun:Reload()
 		end
 		
 		if self.plr then
-			RemoteEvent:FireClient(self.plr, "reload", {magCurrent = self.magCurrent, ammoCurrent = self.ammoCurrent})
+			RemoteEvent:FireClient(self.plr, "reload", {magCurrent = self.magCurrent, ammoCurrent = self.ammoCurrent, magCapacity = self.magCapacity})
 		end
 
 		self.isReloading = false
@@ -284,8 +320,38 @@ function Gun:Reload()
 	end
 end
 
+function Gun:Sprint()
+	if not self.isSprintPressed then
+		self.isSprintPressed = true
+		self.shooter.Humanoid.WalkSpeed *= self.sprintSpeedMultiplier
+		-- RemoteFunction:InvokeClient(self.plr, "waitForSprintPressToEnd")
+		
+		-- Drain:
+		while self.isSprintPressed do
+			task.wait(0.1)
+			if self.shooter.Humanoid.MoveDirection.Magnitude == 0 then 
+				if self.currentSprintStamina >= self.sprintStamina then continue end
+
+				self.currentSprintStamina += 1
+				print(self.currentSprintStamina)
+				continue
+			else
+				self.currentSprintStamina -= 1
+				if not self.isSprintPressed then break end
+				print(self.currentSprintStamina)
+			end
+		end
+		self.isSprintPressed = false
+		
+		-- Recovery:
+		recoverStamina(self)
+	end
+end
+
 function Gun:Equip()
+	self.Gun_Sounds.Equip:Play()
 	self.isEquipped = true
+	RemoteEvent:FireClient(self.plr, "onEquipped", {isEquipped = self.isEquipped})
 	self.Animations.Idle:Play()
 	params.FilterDescendantsInstances = {self.tool.Parent, bulletsFolder, chamberFolder}
 	self.Gun_Sounds.Equip:Play()
@@ -293,6 +359,7 @@ end
 
 function Gun:Unequip()
 	self.isEquipped = false
+	RemoteEvent:FireClient(self.plr, "onUnequipped", {isEquipped = self.isEquipped})
 	self.Animations.Idle:Stop()
 end
 
@@ -300,12 +367,13 @@ function Gun:Activate()
 	self.isHolding = true
 	if self.magCurrent == 0 and self.isReloading == false then
 		self.Gun_Sounds.EmptyMag:Play()
-	elseif self.magCurrent > 0 and not self.isReloading then
+	
+	-- elseif self.magCurrent > 0 and not self.isReloading then
 
-		while self.isHolding do
-			self:Fire()
-			task.wait(self.fireRate)
-		end
+		-- while self.isHolding do
+		-- 	self:Fire()
+		-- 	task.wait(self.fireRate)
+		-- end
 	end
 end
 
@@ -326,15 +394,25 @@ end
 function Gun:BulletImpact(cast, result, velocity, bullet)
 
 	local rayInstance = result.Instance -- oddly, FastCast results are never nil, so this line of code is safe
+	local resultHumanoid = rayInstance.Parent:FindFirstChild("Humanoid")
+
+	if resultHumanoid and resultHumanoid.Health > 0 then
+		if rayInstance == rayInstance.Parent:FindFirstChild("Head") then
+			-- print("You hit "..tostring(rayInstance.Parent) .." by headshot!")
+			RemoteEvent:FireClient(self.plr, "characterHit", {hitSound = self.Gun_Sounds.Headshot})
+			rayInstance.Parent.Humanoid:TakeDamage(80)
+		else
+			-- print("You hit "..tostring(rayInstance.Parent) .."'s "..tostring(rayInstance.Name))
+			RemoteEvent:FireClient(self.plr, "characterHit", {hitSound = self.Gun_Sounds.Hit})
+			rayInstance.Parent.Humanoid:TakeDamage(40)
+		end
 	
-	if rayInstance == rayInstance.Parent:FindFirstChild("Head") and rayInstance.Parent:FindFirstChild("Humanoid").Health > 0 then
-		print("You hit "..tostring(rayInstance.Parent) .." by headshot!")
-		RemoteEvent:FireClient(self.plr, "characterHit", {hitSFX = self.Gun_Sounds.Hit, headSheadshotSFX = self.Gun_Sounds.Headshot, rayInstance = rayInstance})
-		rayInstance.Parent.Humanoid:TakeDamage(80)
-	elseif rayInstance.Parent:FindFirstChild("Humanoid") and rayInstance.Parent:FindFirstChild("Humanoid").Health > 0 then
-		print("You hit "..tostring(rayInstance.Parent) .."'s "..tostring(rayInstance.Name))
-		RemoteEvent:FireClient(self.plr, "characterHit", {hitSFX = self.Gun_Sounds.Hit, headSheadshotSFX = self.Gun_Sounds.Headshot, rayInstance = rayInstance})
-		rayInstance.Parent.Humanoid:TakeDamage(40)
+		if resultHumanoid and resultHumanoid.Health <= 0 then
+			-- Give shooter money:
+			warn("Give shooter money")
+			WeaponsMarket:AwardKill(self.shooter.Name, 1)
+			WeaponsMarket:AwardCash(self.shooter.Name, 5)
+		end
 	end
 	
 	delay(1.25, function() -- delay is like wait(), but instead it doesn't yield the entire script, and will be like a wait() on a seperate thread.

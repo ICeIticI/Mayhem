@@ -17,7 +17,6 @@ function Gun_m6dManager.run(plr)
     
     char.ChildAdded:Connect(function(child) -- runs whenever anything is added to the characters inventory
         if child:IsA("Tool") and child:FindFirstChild("BodyAttach") then
-            print("chilad")
             Motor.Part1 = child.BodyAttach
         end
     end)
