@@ -1,5 +1,5 @@
 local Players = game:GetService("Players")
-local ServerStorage = game:GetService("ServerStorage")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local FastCast = require(game.ServerScriptService.FastCastRedux) -- require is how we use the data in module scripts
 local partCache = require(game.ServerScriptService.PartCache) -- used to reduce lag. Stores bullets far from the map being played on
@@ -64,12 +64,15 @@ local bulletCache = partCache.new(createBulletTemplate(Vector3.new(0.293, 0.042,
 local chamberCache = partCache.new(createChamberTemplate(Vector3.new(0.284, 0.07, 0.056)), 100, chamberFolder)
 
 
-local GunToolPresets = ServerStorage:WaitForChild("GunToolPresets")
+local GunToolPresets = ReplicatedStorage:WaitForChild("GunToolPresets")
 Gun.gunPresets = {
-	AK15_Preset = {
+	["AK-15_Preset"] = {
 		name = "AK-15",
+		tool = GunToolPresets["AK-15"],
+		cost = 10000,
+		killsRequired = 25,
+		productId = 3382902336,
 		description = "Assault Rifle descended from the legendary AK-47 modernized.",
-		tool = GunToolPresets.AK15,
 
 		fireRate = 0.0857,
 		sprintSpeedMultiplier = 1.5, -- May change in the future, especially if attachments cause weigh-down, but not our concern as of now.
@@ -80,6 +83,15 @@ Gun.gunPresets = {
 		ammoMax = 180 -- the maximum amount of bullets the shooter can hold not in the clip
 	}
 }
+Gun.presetProductIds = {}
+for i, preset in pairs(Gun.gunPresets) do
+	preset.tool:SetAttribute("Gun", true)
+	preset.tool:SetAttribute("Description", preset.description)
+	preset.tool:SetAttribute("Cost", preset.cost)
+	preset.tool:SetAttribute("ProductId", preset.productId)
+
+	Gun.presetProductIds[preset.productId] = i
+end
 
 -- raycast params being added to FastCast params
 local params = RaycastParams.new() -- we can even add the standard Raycast params to FastCasting
@@ -112,8 +124,10 @@ function Gun.new(character, config)
 
 	self.name = config.name
 	self.description = config.description
+	self.cost = config.cost
+	self.killsRequired = config.killsRequired
+
 	self.tool = config.tool:Clone()
-	self.tool:SetAttribute("Gun", true)
 	self.tool.Name = self.name
 
 	-- Parts:
@@ -165,35 +179,46 @@ function Gun.new(character, config)
 
 	-- Connections:
 
-	self.tool.Equipped:Connect(function()
-		self:Equip()
-	end)
-	self.tool.Unequipped:Connect(function()
-		self:Unequip()
-	end)
-	self.tool.Activated:Connect(function()
-		self:Activate()
-	end)
-	self.tool.Deactivated:Connect(function()
-		self:Deactivate()
-	end)
+	self.connections = {
 
-	self.bulletCaster.LengthChanged:Connect(function(cast, lastPoint, direction, length, velocity, chamber)
-		self:ChangeBulletRaycastLength(cast, lastPoint, direction, length, velocity, chamber)
-	end)
-	self.bulletCaster.RayHit:Connect(function(cast, result, velocity, bullet)
-		self:BulletImpact(cast, result, velocity, bullet)
-	end)
+		self.tool.Equipped:Connect(function()
+			self:Equip()
+		end),
+		self.tool.Unequipped:Connect(function()
+			self:Unequip()
+		end),
+		self.tool.Activated:Connect(function()
+			self:Activate()
+		end),
+		self.tool.Deactivated:Connect(function()
+			self:Deactivate()
+		end),
 	
-	self.chamberCaster.LengthChanged:Connect(function(cast, lastPoint, direction, length, velocity, chamber)
-		self:ChangeChamberRaycastLength(cast, lastPoint, direction, length, velocity, chamber)
-	end)
-	self.chamberCaster.RayHit:Connect(function(cast, result, velocity, bullet)
-		self:ChamberImpact(cast, result, velocity, bullet)
-	end)
+		self.bulletCaster.LengthChanged:Connect(function(cast, lastPoint, direction, length, velocity, chamber)
+			self:ChangeBulletRaycastLength(cast, lastPoint, direction, length, velocity, chamber)
+		end),
+		self.bulletCaster.RayHit:Connect(function(cast, result, velocity, bullet)
+			self:BulletImpact(cast, result, velocity, bullet)
+		end),
+		
+		self.chamberCaster.LengthChanged:Connect(function(cast, lastPoint, direction, length, velocity, chamber)
+			self:ChangeChamberRaycastLength(cast, lastPoint, direction, length, velocity, chamber)
+		end),
+		self.chamberCaster.RayHit:Connect(function(cast, result, velocity, bullet)
+			self:ChamberImpact(cast, result, velocity, bullet)
+		end)
+	}
+
 
 	Gun.activeGuns[self.shooter.Name --[[.. "_" .. self.name]] ] = self
 	return self
+end
+
+function Gun:Remove()
+	for _, connection in pairs(self.connections) do
+		connection:Disconnect()
+	end
+	self.tool:Destroy()
 end
 
 
@@ -226,7 +251,6 @@ function Gun:Fire(ray)
 			if self.isHolding ~= true then
 				break			
 			elseif i == 300 then
-				--print(i)
 				self.bulletSmoke.Enabled = true
 				delay(15,function()
 					self.bulletSmoke.Enabled = false
@@ -238,7 +262,7 @@ function Gun:Fire(ray)
 	self.magCurrent = self.magCurrent - 1
 	
 	if not self.plr then return true end
-	RemoteEvent:FireClient(self.plr, "changeUiDisplay", {magCurrent = self.magCurrent, magCapacity = self.magCapacity})
+	RemoteEvent:FireClient(self.plr, "changeUiDisplay", {UIToChange = "Ammo_Display", magCurrent = self.magCurrent, magCapacity = self.magCapacity})
 	return true
 end
 
@@ -276,8 +300,7 @@ function Gun:Reload()
 		
 	elseif self.magCurrent < self.magCapacity and self.isReloading == false and self.ammoCurrent > 0 then -- tactical reload for when the mag is only partially empty
 		
-		local tacticalReloadSFX = self.Gun_Sounds.Reload:Clone()
-		tacticalReloadSFX.Parent = self.Gun_Sounds.Reload.Parent
+		local tacticalReloadSFX = self.Gun_Sounds.Reload
 		
 		if not tacticalReloadSFX.IsLoaded then
 			tacticalReloadSFX.Loaded:Wait()
@@ -409,9 +432,8 @@ function Gun:BulletImpact(cast, result, velocity, bullet)
 	
 		if resultHumanoid and resultHumanoid.Health <= 0 then
 			-- Give shooter money:
-			warn("Give shooter money")
-			WeaponsMarket:AwardKill(self.shooter.Name, 1)
-			WeaponsMarket:AwardCash(self.shooter.Name, 5)
+			WeaponsMarket:AwardKill(self.plr, 1)
+			WeaponsMarket:AwardCash(self.plr, 5)
 		end
 	end
 	

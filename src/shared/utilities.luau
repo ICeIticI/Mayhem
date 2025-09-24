@@ -18,8 +18,6 @@ function Utilities.checkInput(input)
             return key
         end
     end
-    -- warn("given input doesn't match allowed inputs:")
-    -- print(Utilities.userInputTypes)
     return false
 end
 
@@ -46,7 +44,6 @@ function Utilities.makeDictionaryFromFolder(folder)
     for _, inst in pairs(folder:GetChildren()) do
         newDictionary[inst.Name] = inst
     end
-    print(newDictionary)
     return newDictionary
 end
 
@@ -60,13 +57,11 @@ function Utilities.multiplyTableValuesTogether(tbl)
         end
     end
 
-    warn(newProduct)
     return newProduct
 end
 
 function Utilities.createInstance(instanceName: string, properties : dictionary) -- One-liner version of creating an instance
     local newInstance = Instance.new(instanceName)
-    print(newInstance)
     for i, v in pairs(properties) do
         if newInstance then
             newInstance[i] = v
@@ -82,6 +77,10 @@ function Utilities.makeAnimationTracksFromAnimations(animationsTable, animator)
     local tracksTable = {}
     for _, animation in pairs(animationsTable) do
         tracksTable[animation.Name] = animator:LoadAnimation(animation)
+
+        -- "warm up" the AnimationTracks because its delayed on first play:
+        tracksTable[animation.Name]:Play()
+        tracksTable[animation.Name]:Stop()
     end
 
     return tracksTable
@@ -104,11 +103,25 @@ function Utilities.FindChildByAttributes(parent: Instance, attributeCriteria: { 
 			end
 		end
 		if matchesAll then
-            print("Found it!")
 			return child
 		end
 	end
 	return nil
+end
+
+function Utilities.FindChildByNameWhichIsA(parent : Instance, name : string, className : string)
+    for _, child in pairs(parent:GetChildren()) do
+        if child.Name == name and child:IsA(className) then
+            return child
+        end
+    end
+    -- return warn("No child of " .. parent.Name .. " found with the name " .. name .. " that is a " .. className)
+end
+
+function Utilities.HasProperty(obj: Instance, prop: string): boolean
+	return pcall(function()
+		local _ = obj[prop]
+	end)
 end
 
 

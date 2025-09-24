@@ -9,17 +9,39 @@ local RemoteFunction = Instance.new("RemoteFunction")
 RemoteFunction.Name = "RemoteFunction"
 RemoteFunction.Parent = ReplicatedStorage
 
+local DataManager = require(game.ReplicatedStorage.Shared.server_modules.DataManager)
+local WeaponsMarket = require(game.ReplicatedStorage.Shared.server_modules.WeaponsMarket)
 require(game.ReplicatedStorage.Shared.server_modules.server_events) -- Activate remote event & function listeners on the server-side
+local utilities = require(game.ReplicatedStorage.Shared.utilities)
 local Gun = require(game.ReplicatedStorage.Shared.server_modules.Gun)
 local Gun_m6dManager = require(game.ReplicatedStorage.Shared.server_modules.Gun_m6dManager)
 
-local function onPlayerAdded(player)
-    player.CharacterAdded:Connect(function(char)
-        Gun_m6dManager.run(player)
-        local newGun = Gun.new(char, Gun.gunPresets.AK15_Preset)
-        newGun.tool.Parent = player.Backpack
+local function onCharacterAdded(char)
+    local player = Players:GetPlayerFromCharacter(char)
 
-    end)
+    Gun_m6dManager.run(player)
+    -- local newGun = Gun.new(char, Gun.gunPresets.AK15_Preset)
+    -- newGun.tool.Parent = player.Backpack
+end
+
+local function onPlayerAdded(player)
+    -- Lock player's camera in first person:
+    -- player.CameraMode = Enum.CameraMode.LockFirstPerson
+
+    -- utilities.createInstance("Folder", {Name = "equippedWeapons", Parent = player})
+    utilities.createInstance("Folder", {Name = "unequippedWeapons", Parent = player})
+
+    DataManager:LoadData(player)
+    WeaponsMarket:InitiateAccounts(player)
+
+    if player.Character then
+        onCharacterAdded(player.Character)
+    end
+    player.CharacterAdded:Connect(onCharacterAdded)
+end
+
+local function onPlayerRemove(player)
+    DataManager:SaveData(player)
 end
 
 for _, player in pairs(Players:GetPlayers()) do
@@ -27,3 +49,9 @@ for _, player in pairs(Players:GetPlayers()) do
 end
 
 Players.PlayerAdded:Connect(onPlayerAdded)
+Players.PlayerRemoving:Connect(onPlayerRemove)
+game:BindToClose(function()
+    for _, player in pairs(Players:GetPlayers()) do
+        onPlayerRemove(player)
+    end
+end)

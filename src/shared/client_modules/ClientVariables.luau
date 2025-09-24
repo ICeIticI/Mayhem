@@ -2,8 +2,8 @@ local ClientVariables = {}
 
 ClientVariables.player = game:GetService("Players").LocalPlayer
 
-ClientVariables.Gun_GUI = ClientVariables.player.PlayerGui:WaitForChild("Gun_GUI")
-ClientVariables.Main_Display = ClientVariables.Gun_GUI:WaitForChild("Main_Display")
+ClientVariables.Gun_GUI = ClientVariables.player.PlayerGui:WaitForChild("ScreenGui")
+ClientVariables.Main_Display = ClientVariables.Gun_GUI:WaitForChild("Ammo_Display")
 
 ClientVariables.gunCursor = "rbxasset://textures/GunCursor.png"
 ClientVariables.reloadingCursor = "rbxasset://textures/GunWaitCursor.png"

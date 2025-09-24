@@ -2,13 +2,20 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
 local ClientVariables = require(game.ReplicatedStorage.Shared.client_modules.ClientVariables)
+local shopManager = require(game.ReplicatedStorage.Shared.client_modules.shopManager)
 
 local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")
 local RemoteFunction = ReplicatedStorage:WaitForChild("RemoteFunction")
 
 local function receiveClientEvent(protocol, data)
     if protocol == "changeUiDisplay" then
-        ClientVariables.Main_Display:WaitForChild("Ammo_Display").Text = "Mag: "..tostring(data.magCurrent).. "/" .. tostring(data.magCapacity)
+		if data.UIToChange == "Ammo_Display" then
+			ClientVariables.Main_Display:WaitForChild("Ammo_Display").Text = "Mag: "..tostring(data.magCurrent).. "/" .. tostring(data.magCapacity)
+		elseif data.UIToChange == "Kills_Display" then
+			ClientVariables.Gun_GUI.Kills_Display.Text = "Kills: " .. tostring(data.killsAmount)
+		elseif data.UIToChange == "Cash_Display" then
+			ClientVariables.Gun_GUI.Cash_Display.Text = "Cash: " .. tostring(data.cashAmount)
+		end
         
     elseif protocol == "iconChange" then
         if data.magCurrent == 0 then
@@ -45,6 +52,9 @@ local function receiveClientEvent(protocol, data)
 	elseif protocol == "onUnequipped" then
 		UserInputService.MouseIcon = ClientVariables.previousMouseIcon
 		ClientVariables.Main_Display.Visible = data.isEquipped
+
+	elseif protocol == "weaponProductPurchased" then
+		shopManager.buttons[data.weaponName]:closePurchase()
 	end
 end
 

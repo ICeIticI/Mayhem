@@ -4,10 +4,7 @@ local UserInputService = game:GetService("UserInputService")
 local ClientVariables = require(game.ReplicatedStorage.Shared.client_modules.ClientVariables)
 local utilities = require(game.ReplicatedStorage.Shared.utilities)
 require(game.ReplicatedStorage.Shared.client_modules.client_events)
-
-
--- Lock player's camera in first person:
-ClientVariables.player.CameraMode = Enum.CameraMode.LockFirstPerson
+require(game.ReplicatedStorage.Shared.client_modules.shopManager)
 
 local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")
 local camera = workspace.CurrentCamera
@@ -21,9 +18,10 @@ UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
     inputTable.UserInputType = input.UserInputType
     inputTable.KeyCode = input.KeyCode
 
+    if gameProcessedEvent then return end
     
     if inputType == "ShootInputs" then
-        if not ClientVariables.gunTool.Values.shootDebounce.Value and ClientVariables.gunTool.Activated then
+        if ClientVariables.gunTool and not ClientVariables.gunTool.Values.shootDebounce.Value and ClientVariables.gunTool.Activated then
             isHolding = true
             while isHolding and ClientVariables.gunTool.Equipped do
                 local screenCenter = camera.ViewportSize / 2
@@ -33,7 +31,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
             end
         end
     else
-        RemoteEvent:FireServer("inputStarted", {input = inputTable, gameProcessedEvent = gameProcessedEvent, ray = ray})
+        RemoteEvent:FireServer("inputStarted", {input = inputTable, gameProcessedEvent = gameProcessedEvent})
     end
 end)
 
@@ -56,7 +54,6 @@ ClientVariables.gunTool = utilities.FindChildByAttributes(ClientVariables.player
 
 ClientVariables.player.Backpack.ChildAdded:Connect(function(child)
     if child:IsA("Tool") and child:GetAttribute("Gun") then
-        warn(child)
         ClientVariables.gunTool = child
     end
 end)
