@@ -11,7 +11,8 @@ if game.PlaceId ~= 0 then
 
     DataStores = {
         ["Kills"] = DataStoreService:GetDataStore("Kills_Store"),
-        ["Cash"] = DataStoreService:GetDataStore("Cash_Store")
+        ["Cash"] = DataStoreService:GetDataStore("Cash_Store"),
+        ["OwnedWeapons"] = DataStoreService:GetDataStore("OwnedWeapons_Store")
     }
 end
 
@@ -30,11 +31,28 @@ function DataManager:LoadData(plr) -- Loads player-saved data into the server
         end)
 
         if success then
-            playerData[plr.UserId][datastoreKEY] = result or 0
+            playerData[plr.UserId][datastoreKEY] = result or {}
         else
             warn(result)
         end
     end
+end
+
+function DataManager:GetData(plr, ds_name) -- Retrieves a specific type of data for the player
+    if plr.UserId < 1 then return {} end
+
+    local datastoreKEY = "id_" .. plr.UserId .. "_" .. ds_name
+    return playerData[plr.UserId][datastoreKEY] or {}
+end
+
+function DataManager:SetData(plr, ds_name, value) -- Puts the data to the data table that stores it. This allows the data to actually save to DataStores when we need to call :SaveData()
+    if plr.UserId < 1 then return end
+
+	local datastoreKEY = "id_" .. plr.UserId .. "_" .. ds_name
+
+	-- playerData[userId] = playerData[userId] or {}
+	playerData[plr.UserId][datastoreKEY] = value
+
 end
 
 function DataManager:SaveData(plr) -- Saves player's current data in the server to datastores
@@ -52,13 +70,6 @@ function DataManager:SaveData(plr) -- Saves player's current data in the server 
             warn(result)
         end
     end
-end
-
-function DataManager:GetData(plr, ds_name) -- Retrieves a specific type of data for the player
-    if plr.UserId < 1 then return 0 end
-
-    local datastoreKEY = "id_" .. plr.UserId .. "_" .. ds_name
-    return playerData[plr.UserId][datastoreKEY] or 0
 end
 
 return DataManager

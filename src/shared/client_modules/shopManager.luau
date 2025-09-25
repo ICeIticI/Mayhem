@@ -68,13 +68,13 @@ local function initiatePurchaseButton(itemToDisplay)
         return 
     end
 
-    function button:SweapParents()
+    function button:SwapParents(bool) -- true means equipped, false means unequipped
         -- changes button parent to either equipped selection or unequipped:
-        if self.instance.Parent == selectionFrame then
+        if bool == true then
             -- change to equipped section:
             self.instance.Size = UI_EQUIPPED_SIZE
             self.instance.Parent = equippedFrame
-        elseif self.instance.Parent == equippedFrame then
+        else
             -- change to unequipped section:
             self.instance.Size = UI_SELECTION_SIZE
             self.instance.Parent = selectionFrame
@@ -83,13 +83,13 @@ local function initiatePurchaseButton(itemToDisplay)
     end
 
     function button:closePurchase() -- will notify the player via the equipPurchase_screen that their purchase was complete
-    equipPurchase_screen.Yes.Visible = false
-    equipPurchase_screen.No.Visible = false
+        equipPurchase_screen.Yes.Visible = false
+        equipPurchase_screen.No.Visible = false
 
-    equipPurchase_screen.Ok.Visible = true
-    equipPurchase_screen.purchaseWithRobuxFrame.Visible = false
-    equipPurchase_screen.TextLabel.Text = "Thank you! You now own the " ..tostring(self.item.name) .. "!"
-    promptToPurchaseWithRobux = false
+        equipPurchase_screen.Ok.Visible = true
+        equipPurchase_screen.purchaseWithRobuxFrame.Visible = false
+        equipPurchase_screen.TextLabel.Text = "Thank you! You now own the " ..tostring(self.item.name) .. "!"
+        promptToPurchaseWithRobux = false
 end
 
     -- Connections:
@@ -152,7 +152,7 @@ equipPurchase_screen.Yes.Activated:Connect(function()
 
     if getItem ~= "purchased" then -- we dont want to switch button parents on purchase, only on equip/unequip.
         -- changes button parent to either equipped selection or unequipped:
-        currentlySelectedButton:SweapParents()
+        -- currentlySelectedButton:SwapParents()
 
         ClientVariables.gunTool = utilities.FindChildByAttributes(ClientVariables.player.Backpack, {Gun = true})
         equipPurchase_screen.Visible = false

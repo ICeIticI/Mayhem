@@ -54,14 +54,18 @@ local function receiveServerInvoke(plr, protocol, data)
         if config then
             
             -- do we own the gun?
+            local ownedWeapons = WeaponsMarket:GetWeaponsAccount(plr)
+            print(ownedWeapons)
             local equippedWeapon = utilities.FindChildByNameWhichIsA(plr.Backpack, data.name, "Tool") or utilities.FindChildByNameWhichIsA(plr.Character, data.name, "Tool")
             
-            if equippedWeapon then -- The weapon is equipped already
+            if ownedWeapons[data.name] and ownedWeapons[data.name].equipped then -- The weapon is equipped already
                 equippedWeapon.Parent = plr.unequippedWeapons
+                WeaponsMarket:AddWeaponToWeaponsAccount(plr, plrGun, false)
                 -- plrGun:Remove()
 
-            elseif plr.unequippedWeapons:FindFirstChild(data.name) then -- The weapon is unequipped
+            elseif ownedWeapons[data.name] and not ownedWeapons[data.name].equipped then -- The weapon is unequipped
                 plr.unequippedWeapons:FindFirstChild(data.name).Parent = plr.Backpack
+                WeaponsMarket:AddWeaponToWeaponsAccount(plr, plrGun, true)
 
                 -- For now we only allow one weapon to be equipped, which is intended to be changed later:
                 -- plrGun.tool.Parent = plr.unequippedWeapons
@@ -76,6 +80,9 @@ local function receiveServerInvoke(plr, protocol, data)
                     WeaponsMarket:SubtractCash(plr, config.cost)
                     local desiredWeapon = Gun.new(plr.Character, config)
                     desiredWeapon.tool.Parent = plr.unequippedWeapons
+
+                    WeaponsMarket:AddWeaponToWeaponsAccount(plr, desiredWeapon, false)
+
                     return "purchased"
                 else
                     if kills < config.killsRequired then
@@ -106,6 +113,7 @@ local function onProcessReceipt(receiptInfo)
 	if presetWithGivenProductId then
 		local desiredWeapon = Gun.new(player.Character, Gun.gunPresets[presetWithGivenProductId])
         desiredWeapon.tool.Parent = player.unequippedWeapons
+        WeaponsMarket:AddWeaponToWeaponsAccount(player, desiredWeapon, false)
 		RemoteEvent:FireClient(player, "weaponProductPurchased", {weaponName = desiredWeapon.name})
 	end
 

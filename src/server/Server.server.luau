@@ -29,10 +29,18 @@ local function onPlayerAdded(player)
     -- player.CameraMode = Enum.CameraMode.LockFirstPerson
 
     -- utilities.createInstance("Folder", {Name = "equippedWeapons", Parent = player})
-    utilities.createInstance("Folder", {Name = "unequippedWeapons", Parent = player})
+    local unequippedWeapons = utilities.createInstance("Folder", {Name = "unequippedWeapons", Parent = player})
 
     DataManager:LoadData(player)
     WeaponsMarket:InitiateAccounts(player)
+    for _, weaponData in pairs(WeaponsMarket:GetWeaponsAccount(player)) do
+        local newGun = Gun.new(player.Character, Gun.gunPresets[weaponData.name .. "_Preset"])
+        if weaponData.equipped then
+            newGun.tool.Parent = player.Backpack
+        else
+            newGun.tool.Parent = unequippedWeapons
+        end
+    end
 
     if player.Character then
         onCharacterAdded(player.Character)

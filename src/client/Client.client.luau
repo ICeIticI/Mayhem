@@ -4,7 +4,7 @@ local UserInputService = game:GetService("UserInputService")
 local ClientVariables = require(game.ReplicatedStorage.Shared.client_modules.ClientVariables)
 local utilities = require(game.ReplicatedStorage.Shared.utilities)
 require(game.ReplicatedStorage.Shared.client_modules.client_events)
-require(game.ReplicatedStorage.Shared.client_modules.shopManager)
+local ShopManager = require(game.ReplicatedStorage.Shared.client_modules.shopManager)
 
 local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")
 local camera = workspace.CurrentCamera
@@ -52,8 +52,23 @@ end)
 
 ClientVariables.gunTool = utilities.FindChildByAttributes(ClientVariables.player.Backpack, {Gun = true})
 
-ClientVariables.player.Backpack.ChildAdded:Connect(function(child)
+
+-- Change UI parent based on if the gun is equipped or not:
+
+local function onChildChanged(child)
     if child:IsA("Tool") and child:GetAttribute("Gun") then
-        ClientVariables.gunTool = child
+        if child.Parent == ClientVariables.player.Backpack or child.Parent == ClientVariables.player.Character then
+            -- equipped weapon
+            ClientVariables.gunTool = child
+            ShopManager.buttons[child.Name]:SwapParents(true)
+        else
+            ShopManager.buttons[child.Name]:SwapParents(false)
+        end
     end
+end
+ClientVariables.player.Backpack.ChildAdded:Connect(onChildChanged)
+ClientVariables.player.Backpack.ChildRemoved:Connect(onChildChanged)
+ClientVariables.player.CharacterAdded:Connect(function(character)
+    character.ChildAdded:Connect(onChildChanged)
+    character.ChildRemoved:Connect(onChildChanged)
 end)
