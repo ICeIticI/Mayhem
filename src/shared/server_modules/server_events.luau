@@ -9,13 +9,18 @@ local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")
 local RemoteFunction = ReplicatedStorage:WaitForChild("RemoteFunction")
 
 local function receiveServerEvent(plr, protocol, data)
-    
-    
+
+    if protocol == "play" then
+        plr:LoadCharacter()
+        return
+    end
+
+
     local inputType = utilities.checkInput(data.input)
-    if not inputType then return end -- only allow specific inputs
+    if not inputType and protocol ~= "move_arms" then return end -- only allow specific inputs
 
     local plrGun = Gun.activeGuns[plr.Name]
-    if not plrGun.isEquipped then return end -- they should absolutely have their gun equipped to use it
+    if not plrGun.isEquipped and protocol ~= "move_arms" then return end -- they should absolutely have their gun equipped to use it
 
 
     if protocol == "inputStarted" then
@@ -39,6 +44,11 @@ local function receiveServerEvent(plr, protocol, data)
             plrGun.isSprintPressed = false
         end
 
+    elseif protocol == "move_arms" then
+        -- if plrGun.tool.Equipped then
+            plr.Character:WaitForChild("Torso"):WaitForChild("Right Shoulder").C0 = data.RightC0
+            plr.Character:WaitForChild("Torso"):WaitForChild("Left Shoulder").C0 = data.LeftC0
+        -- end
     end
 end
 
@@ -55,7 +65,6 @@ local function receiveServerInvoke(plr, protocol, data)
             
             -- do we own the gun?
             local ownedWeapons = WeaponsMarket:GetWeaponsAccount(plr)
-            print(ownedWeapons)
             local equippedWeapon = utilities.FindChildByNameWhichIsA(plr.Backpack, data.name, "Tool") or utilities.FindChildByNameWhichIsA(plr.Character, data.name, "Tool")
             
             if ownedWeapons[data.name] and ownedWeapons[data.name].equipped then -- The weapon is equipped already

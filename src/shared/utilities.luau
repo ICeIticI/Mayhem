@@ -14,7 +14,7 @@ Utilities.userInputTypes = {
 
 function Utilities.checkInput(input)
     for key, inputType in pairs(Utilities.userInputTypes) do
-        if inputType[input.UserInputType] or inputType[input.KeyCode] then
+        if input and (inputType[input.UserInputType] or inputType[input.KeyCode]) then
             return key
         end
     end

@@ -20,8 +20,15 @@ local function onCharacterAdded(char)
     local player = Players:GetPlayerFromCharacter(char)
 
     Gun_m6dManager.run(player)
-    -- local newGun = Gun.new(char, Gun.gunPresets.AK15_Preset)
-    -- newGun.tool.Parent = player.Backpack
+
+    for _, weaponData in pairs(WeaponsMarket:GetWeaponsAccount(player)) do
+        local newGun = Gun.new(player.Character, Gun.gunPresets[weaponData.name .. "_Preset"])
+        if weaponData.equipped then
+            newGun.tool.Parent = player.Backpack
+        else
+            newGun.tool.Parent = player:WaitForChild("unequippedWeapons")
+        end
+    end
 end
 
 local function onPlayerAdded(player)
@@ -29,18 +36,10 @@ local function onPlayerAdded(player)
     -- player.CameraMode = Enum.CameraMode.LockFirstPerson
 
     -- utilities.createInstance("Folder", {Name = "equippedWeapons", Parent = player})
-    local unequippedWeapons = utilities.createInstance("Folder", {Name = "unequippedWeapons", Parent = player})
+    utilities.createInstance("Folder", {Name = "unequippedWeapons", Parent = player})
 
     DataManager:LoadData(player)
     WeaponsMarket:InitiateAccounts(player)
-    for _, weaponData in pairs(WeaponsMarket:GetWeaponsAccount(player)) do
-        local newGun = Gun.new(player.Character, Gun.gunPresets[weaponData.name .. "_Preset"])
-        if weaponData.equipped then
-            newGun.tool.Parent = player.Backpack
-        else
-            newGun.tool.Parent = unequippedWeapons
-        end
-    end
 
     if player.Character then
         onCharacterAdded(player.Character)
@@ -63,3 +62,5 @@ game:BindToClose(function()
         onPlayerRemove(player)
     end
 end)
+
+Players.CharacterAutoLoads = false

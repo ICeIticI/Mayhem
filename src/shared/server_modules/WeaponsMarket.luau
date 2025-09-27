@@ -59,7 +59,6 @@ function WeaponsMarket:AddWeaponToWeaponsAccount(plr, weapon, equipped)
 
     gunsAccounts[plr.UserId][weapon.name] = {name = weapon.name, equipped = equipped}
     DataManager:SetData(plr, "OwnedWeapons", gunsAccounts[plr.UserId])
-    print(gunsAccounts[plr.UserId])
 end
 
 return WeaponsMarket

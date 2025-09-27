@@ -1,10 +1,28 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+
+-- Load UI in on join
+if Players.LocalPlayer then
+    for _, v in pairs(game:GetService("StarterGui"):GetChildren()) do
+        v:Clone().Parent = Players.LocalPlayer.PlayerGui
+    end
+end
+Players.PlayerAdded:Connect(function(player)
+    if player ~= Players.LocalPlayer then return end
+    for _, v in pairs(game:GetService("StarterGui"):GetChildren()) do
+        v:Clone().Parent = player.PlayerGui
+    end
+end)
 
 local ClientVariables = require(game.ReplicatedStorage.Shared.client_modules.ClientVariables)
-local utilities = require(game.ReplicatedStorage.Shared.utilities)
 require(game.ReplicatedStorage.Shared.client_modules.client_events)
+local utilities = require(game.ReplicatedStorage.Shared.utilities)
 local ShopManager = require(game.ReplicatedStorage.Shared.client_modules.shopManager)
+local move_arms
+task.spawn(function()
+    move_arms = require(game.ReplicatedStorage.Shared.client_modules.move_arms)
+end)
 
 local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")
 local camera = workspace.CurrentCamera
@@ -25,8 +43,8 @@ UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
             isHolding = true
             while isHolding and ClientVariables.gunTool.Equipped do
                 local screenCenter = camera.ViewportSize / 2
-                local ray = camera:ViewportPointToRay(screenCenter.X, screenCenter.Y)
-                RemoteEvent:FireServer("inputStarted", {input = inputTable, gameProcessedEvent = gameProcessedEvent, ray = ray})
+                ClientVariables.ray = camera:ViewportPointToRay(screenCenter.X, screenCenter.Y)
+                RemoteEvent:FireServer("inputStarted", {input = inputTable, gameProcessedEvent = gameProcessedEvent, ray = ClientVariables.ray})
                 task.wait()
             end
         end
@@ -52,6 +70,18 @@ end)
 
 ClientVariables.gunTool = utilities.FindChildByAttributes(ClientVariables.player.Backpack, {Gun = true})
 
+ClientVariables.Gun_GUI.PlayButton.Visible = true
+ClientVariables.Gun_GUI.Game_Title.Visible = true
+
+ClientVariables.Gun_GUI.PlayButton.Activated:Connect(function()
+   print("Received")
+    ClientVariables.Gun_GUI.PlayButton.Visible = false
+    ClientVariables.Gun_GUI.Game_Title.Visible = false
+    
+    RemoteEvent:FireServer("play")
+
+end)
+
 
 -- Change UI parent based on if the gun is equipped or not:
 
@@ -60,6 +90,13 @@ local function onChildChanged(child)
         if child.Parent == ClientVariables.player.Backpack or child.Parent == ClientVariables.player.Character then
             -- equipped weapon
             ClientVariables.gunTool = child
+
+            if child.Parent == ClientVariables.player.Character then
+                move_arms:activate()
+            else
+                move_arms:deactivate()
+            end
+
             ShopManager.buttons[child.Name]:SwapParents(true)
         else
             ShopManager.buttons[child.Name]:SwapParents(false)
