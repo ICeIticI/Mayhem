@@ -110,6 +110,7 @@ function Utilities.FindChildByAttributes(parent: Instance, attributeCriteria: { 
 end
 
 function Utilities.FindChildByNameWhichIsA(parent : Instance, name : string, className : string)
+    if not parent then return end
     for _, child in pairs(parent:GetChildren()) do
         if child.Name == name and child:IsA(className) then
             return child

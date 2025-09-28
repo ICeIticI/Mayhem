@@ -1,17 +1,30 @@
+-- Services:
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local MarketplaceService = game:GetService("MarketplaceService")
 
-local utilities = require(game.ReplicatedStorage.Shared.utilities)
-local Gun = require(game.ReplicatedStorage.Shared.server_modules.Gun)
-local WeaponsMarket = require(game.ReplicatedStorage.Shared.server_modules.WeaponsMarket)
+-- Events & Functions:
 
 local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")
 local RemoteFunction = ReplicatedStorage:WaitForChild("RemoteFunction")
 
+-- Modules:
+
+local utilities = require(game.ReplicatedStorage.Shared.utilities)
+local Gun = require(game.ReplicatedStorage.Shared.server_modules.Gun)
+local WeaponsMarket = require(game.ReplicatedStorage.Shared.server_modules.WeaponsMarket)
+local games = require(game.ReplicatedStorage.Shared.server_modules.games)
+
+
 local function receiveServerEvent(plr, protocol, data)
 
     if protocol == "play" then
-        plr:LoadCharacter()
+        -- if plr.Character and plr.Character.Parent then return end -- character should not exist when the play button is pressed
+        plr.CameraMode = Enum.CameraMode.LockFirstPerson
+        plr.Character.HumanoidRootPart.Anchored = false
+        plr.IsLoaded.Value = true
+        games.addPlayerToRound(plr)
+        games.spawnCharacter(plr.Character)
         return
     end
 
@@ -20,7 +33,7 @@ local function receiveServerEvent(plr, protocol, data)
     if not inputType and protocol ~= "move_arms" then return end -- only allow specific inputs
 
     local plrGun = Gun.activeGuns[plr.Name]
-    if not plrGun.isEquipped and protocol ~= "move_arms" then return end -- they should absolutely have their gun equipped to use it
+    if (not plrGun or not plrGun.isEquipped or not plr.IsLoaded.Value) and protocol ~= "move_arms" then return end -- they should absolutely have their gun equipped to use it
 
 
     if protocol == "inputStarted" then

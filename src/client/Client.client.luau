@@ -1,19 +1,21 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 
--- Load UI in on join
-if Players.LocalPlayer then
-    for _, v in pairs(game:GetService("StarterGui"):GetChildren()) do
-        v:Clone().Parent = Players.LocalPlayer.PlayerGui
-    end
-end
-Players.PlayerAdded:Connect(function(player)
-    if player ~= Players.LocalPlayer then return end
-    for _, v in pairs(game:GetService("StarterGui"):GetChildren()) do
-        v:Clone().Parent = player.PlayerGui
-    end
-end)
+
+-- -- Do some important character stuff before calling in modules:
+-- local function onPlayerAdded(player)
+--     -- Load UI in on join:
+--     if player ~= Players.LocalPlayer then return end
+--     ReplicatedStorage:WaitForChild("ScreenGui").Parent = player.PlayerGui
+-- end
+-- if Players.LocalPlayer then
+--     onPlayerAdded(Players.LocalPlayer)
+-- end
+-- Players.PlayerAdded:Connect(function(player)
+--     onPlayerAdded(player)
+-- end)
 
 local ClientVariables = require(game.ReplicatedStorage.Shared.client_modules.ClientVariables)
 require(game.ReplicatedStorage.Shared.client_modules.client_events)
@@ -27,6 +29,83 @@ end)
 local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")
 local camera = workspace.CurrentCamera
 local isHolding = false
+ClientVariables.menuMusic = utilities.createInstance("Sound", {Name = "menuMusic", SoundId = "rbxassetid://98904394371808", Looped = true})
+
+
+local PlayScreenFocus = game:GetService("Workspace").PlayScreenFocus
+-- Mirosoft Copilot object-circling code cause idk how to do it:
+
+local center = PlayScreenFocus.Position -- center of the circle
+local radius = 100
+local speed = 0.1 -- radians per second
+local angle = 0
+
+RunService.Heartbeat:Connect(function(dt)
+	angle += speed * dt
+	local x = math.cos(angle) * radius
+	local z = math.sin(angle) * radius
+	PlayScreenFocus.Position = center + Vector3.new(x, 0, z)
+end)
+
+
+
+-- Change UI parent based on if the gun is equipped or not:
+
+local function onChildChanged(child)
+    if child:IsA("Tool") and child:GetAttribute("Gun") then
+        if child.Parent == ClientVariables.player.Backpack or child.Parent == ClientVariables.player.Character then
+            -- equipped weapon
+            ClientVariables.gunTool = child
+
+            if child.Parent == ClientVariables.player.Character and ClientVariables.player.Character.Parent then
+                warn("Activated")
+                move_arms.activate()
+            else
+                move_arms.deactivate()
+            end
+
+            ShopManager.buttons[child.Name]:SwapParents(true)
+        else
+            ShopManager.buttons[child.Name]:SwapParents(false)
+        end
+    end
+end
+
+local function onCharacterAdded(character)
+    ClientVariables.camera.CameraSubject = game:GetService("Workspace"):WaitForChild("PlayScreenFocus")
+    ClientVariables.camera.CameraType = Enum.CameraType.Track
+    ClientVariables.Gun_GUI:WaitForChild("PlayButton").Visible = true
+    ClientVariables.Gun_GUI.Game_Title.Visible = true
+    ClientVariables.Gun_GUI.ShopButton.Visible = true
+
+
+    ClientVariables.menuMusic:Play()
+
+
+    local onChildAddedConnect, onChildRemovedConnect
+    local parent = ClientVariables.player.Backpack
+    onChildAddedConnect = parent.ChildAdded:Connect(function(child)
+        parent:WaitForChild(child.Name)
+        onChildChanged(child)
+    end)
+    onChildRemovedConnect = parent.ChildRemoved:Connect(function(child)
+        onChildChanged(child)
+    end)
+
+    local diedConnect
+    diedConnect = ClientVariables.player.Character.Humanoid.Died:Connect(function()
+        diedConnect:Disconnect()
+        onChildAddedConnect:Disconnect()
+        onChildRemovedConnect:Disconnect()
+    end)
+end
+
+if ClientVariables.player.Character then
+    onCharacterAdded(ClientVariables.player.Character)
+end
+ClientVariables.player.CharacterAdded:Connect(function(character)
+    onCharacterAdded(character)
+end)
 
 UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
     local inputType = utilities.checkInput(input)
@@ -74,38 +153,16 @@ ClientVariables.Gun_GUI.PlayButton.Visible = true
 ClientVariables.Gun_GUI.Game_Title.Visible = true
 
 ClientVariables.Gun_GUI.PlayButton.Activated:Connect(function()
-   print("Received")
+    ClientVariables.camera.CameraSubject = ClientVariables.player.Character:WaitForChild("Humanoid")
+    ClientVariables.camera.CameraType = Enum.CameraType.Custom
+    
     ClientVariables.Gun_GUI.PlayButton.Visible = false
     ClientVariables.Gun_GUI.Game_Title.Visible = false
+    ClientVariables.Gun_GUI.ShopButton.Visible = false
+    ClientVariables.Gun_GUI.shop_frame.Visible = false
+
+    ClientVariables.menuMusic:Stop()
     
     RemoteEvent:FireServer("play")
 
-end)
-
-
--- Change UI parent based on if the gun is equipped or not:
-
-local function onChildChanged(child)
-    if child:IsA("Tool") and child:GetAttribute("Gun") then
-        if child.Parent == ClientVariables.player.Backpack or child.Parent == ClientVariables.player.Character then
-            -- equipped weapon
-            ClientVariables.gunTool = child
-
-            if child.Parent == ClientVariables.player.Character then
-                move_arms:activate()
-            else
-                move_arms:deactivate()
-            end
-
-            ShopManager.buttons[child.Name]:SwapParents(true)
-        else
-            ShopManager.buttons[child.Name]:SwapParents(false)
-        end
-    end
-end
-ClientVariables.player.Backpack.ChildAdded:Connect(onChildChanged)
-ClientVariables.player.Backpack.ChildRemoved:Connect(onChildChanged)
-ClientVariables.player.CharacterAdded:Connect(function(character)
-    character.ChildAdded:Connect(onChildChanged)
-    character.ChildRemoved:Connect(onChildChanged)
 end)

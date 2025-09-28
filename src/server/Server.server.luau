@@ -15,9 +15,14 @@ require(game.ReplicatedStorage.Shared.server_modules.server_events) -- Activate 
 local utilities = require(game.ReplicatedStorage.Shared.utilities)
 local Gun = require(game.ReplicatedStorage.Shared.server_modules.Gun)
 local Gun_m6dManager = require(game.ReplicatedStorage.Shared.server_modules.Gun_m6dManager)
+local games = require(game.ReplicatedStorage.Shared.server_modules.games)
 
 local function onCharacterAdded(char)
+    char:WaitForChild("HumanoidRootPart").Anchored = true
+    char.HumanoidRootPart.CFrame = game:GetService("Workspace").Pre_Spawn.PrimaryPart.CFrame
     local player = Players:GetPlayerFromCharacter(char)
+    player.CameraMode = Enum.CameraMode.Classic
+    player.IsLoaded.Value = false
 
     Gun_m6dManager.run(player)
 
@@ -33,10 +38,10 @@ end
 
 local function onPlayerAdded(player)
     -- Lock player's camera in first person:
-    -- player.CameraMode = Enum.CameraMode.LockFirstPerson
 
     -- utilities.createInstance("Folder", {Name = "equippedWeapons", Parent = player})
     utilities.createInstance("Folder", {Name = "unequippedWeapons", Parent = player})
+    utilities.createInstance("BoolValue", {Name = "IsLoaded", Value = false, Parent = player})
 
     DataManager:LoadData(player)
     WeaponsMarket:InitiateAccounts(player)
@@ -63,4 +68,6 @@ game:BindToClose(function()
     end
 end)
 
-Players.CharacterAutoLoads = false
+while true do
+    games.run()
+end

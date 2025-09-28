@@ -1,6 +1,7 @@
 local ClientVariables = {}
 
 ClientVariables.player = game:GetService("Players").LocalPlayer
+ClientVariables.camera = game:GetService("Workspace").CurrentCamera
 
 ClientVariables.Gun_GUI = ClientVariables.player.PlayerGui:WaitForChild("ScreenGui")
 ClientVariables.Main_Display = ClientVariables.Gun_GUI:WaitForChild("Ammo_Display")

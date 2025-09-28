@@ -372,6 +372,11 @@ function Gun:Sprint()
 end
 
 function Gun:Equip()
+	if self.plr and not self.plr.IsLoaded.Value then
+		self.tool.Parent = self.plr.Backpack
+		return
+	end
+
 	self.Gun_Sounds.Equip:Play()
 	self.isEquipped = true
 	RemoteEvent:FireClient(self.plr, "onEquipped", {isEquipped = self.isEquipped})
