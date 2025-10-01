@@ -18,7 +18,61 @@ ClientVariables.functions = {
                 part.LocalTransparencyModifier = 0 -- Instead of the arms going invisible whenever the player goes in first person, they will stay fully visible.	
             end)
         end
+    end,
+
+    -- Micorosft Copilot did this:
+    getSortedPlayers = function(playerScores)
+        local sorted = {}
+
+        for playerId, score in pairs(playerScores) do
+            table.insert(sorted, {player = game:GetService("Players"):GetPlayerByUserId(playerId), score = score})
+        end
+
+        table.sort(sorted, function(a, b)
+            return a.score > b.score -- descending
+        end)
+
+        return sorted
+
+    end,
+
+    -- Microsoft Copilot also did this:
+    updateLeaderboard = function(sortedPlayers)
+        local leaderboardFrame = ClientVariables.Gun_GUI.round_leaderboard -- your GUI container
+    
+        -- Clear old entries
+        for _, child in pairs(leaderboardFrame:GetChildren()) do
+            if child:IsA("Frame") then
+                child:Destroy()
+            end
+        end
+
+        -- print(sortedPlayers)
+    
+        -- Rebuild leaderboard
+        for rank, entry in ipairs(sortedPlayers) do
+            local player = entry.player
+            local score = entry.score
+    
+            local row = Instance.new("Frame")
+            row.Size = UDim2.new(1, 0, 0, 30)
+            row.Position = UDim2.new(0, 0, 0, (rank - 1) * 30)
+            row.Parent = leaderboardFrame
+    
+            local nameLabel = Instance.new("TextLabel")
+            nameLabel.Text = player.Name
+            nameLabel.Size = UDim2.new(0.6, 0, 1, 0)
+            nameLabel.Parent = row
+    
+            local scoreLabel = Instance.new("TextLabel")
+            scoreLabel.Text = tostring(score)
+            scoreLabel.Size = UDim2.new(0.4, 0, 1, 0)
+            scoreLabel.Position = UDim2.new(0.6, 0, 0, 0)
+            scoreLabel.Parent = row
+        end
     end
+
+
 }
 
 return ClientVariables

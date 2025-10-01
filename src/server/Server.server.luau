@@ -20,20 +20,22 @@ local games = require(game.ReplicatedStorage.Shared.server_modules.games)
 local function onCharacterAdded(char)
     char:WaitForChild("HumanoidRootPart").Anchored = true
     char.HumanoidRootPart.CFrame = game:GetService("Workspace").Pre_Spawn.PrimaryPart.CFrame
+    
     local player = Players:GetPlayerFromCharacter(char)
     player.CameraMode = Enum.CameraMode.Classic
     player.IsLoaded.Value = false
 
-    Gun_m6dManager.run(player)
+    Gun_m6dManager.run(player)    
 
     for _, weaponData in pairs(WeaponsMarket:GetWeaponsAccount(player)) do
-        local newGun = Gun.new(player.Character, Gun.gunPresets[weaponData.name .. "_Preset"])
         if weaponData.equipped then
+            local newGun = Gun.new(player.Character, Gun.gunPresets[weaponData.name .. "_Preset"])
             newGun.tool.Parent = player.Backpack
         else
-            newGun.tool.Parent = player:WaitForChild("unequippedWeapons")
+            utilities.createInstance("StringValue", {Name = weaponData.name, Parent = player.unequippedWeapons})
         end
     end
+    RemoteEvent:FireClient(player, "readyToInitButtons")
 end
 
 local function onPlayerAdded(player)

@@ -14,7 +14,8 @@ local event = nil
 local eventPlaying = false -- we want to know when an event is playing so when we stop doing the move-arms stuff, the event doesn't run after the disconnect stuff runs.
 
 function move_arms.activate()
-    print("We firin'")
+    
+    if event then event:Disconnect() end
     local torso = ClientVariables.player.Character:WaitForChild("Torso")
     event = RunService.RenderStepped:Connect(function() -- runs every frame
         if ClientVariables.player.Character.Humanoid.Health <= 0 then move_arms.deactivate() end

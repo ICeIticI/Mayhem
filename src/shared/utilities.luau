@@ -73,14 +73,30 @@ function Utilities.createInstance(instanceName: string, properties : dictionary)
     return newInstance
 end
 
-function Utilities.makeAnimationTracksFromAnimations(animationsTable, animator)
+function Utilities.makeAnimationTracksFromAnimations(animationsTable, animator) -- animationsTable accepts both Animation instances and AnimationIds
     local tracksTable = {}
-    for _, animation in pairs(animationsTable) do
-        tracksTable[animation.Name] = animator:LoadAnimation(animation)
+    for i, v in pairs(animationsTable) do
+
+        local animation
+        if typeof(v) == "string" then
+            animation = Instance.new("Animation")
+            animation.AnimationId = v
+        elseif typeof(v) == "Instance" and v:IsA("Animation") then
+            animation = v
+        end
+
+        -- make sure we have an actual animation:
+        if not animation then 
+            warn(v .. " is not an animation or animationId. Skipped.") 
+            continue 
+        end
+
+
+        tracksTable[i] = animator:LoadAnimation(animation)
 
         -- "warm up" the AnimationTracks because its delayed on first play:
-        tracksTable[animation.Name]:Play()
-        tracksTable[animation.Name]:Stop()
+        tracksTable[i]:Play()
+        tracksTable[i]:Stop()
     end
 
     return tracksTable
@@ -110,8 +126,11 @@ function Utilities.FindChildByAttributes(parent: Instance, attributeCriteria: { 
 end
 
 function Utilities.FindChildByNameWhichIsA(parent : Instance, name : string, className : string)
+    
     if not parent then return end
     for _, child in pairs(parent:GetChildren()) do
+        if not name then name = child.Name end
+
         if child.Name == name and child:IsA(className) then
             return child
         end
@@ -123,6 +142,15 @@ function Utilities.HasProperty(obj: Instance, prop: string): boolean
 	return pcall(function()
 		local _ = obj[prop]
 	end)
+end
+
+function Utilities.getLength(tbl)
+	assert(typeof(tbl) == "table", "Expected a table")
+	local count = 0
+	for _ in pairs(tbl) do
+		count += 1
+	end
+	return count
 end
 
 

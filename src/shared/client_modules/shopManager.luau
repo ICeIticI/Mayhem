@@ -43,16 +43,31 @@ local PurchaseButton_Template = selectionFrame.PurchaseButton_Template -- templa
 
 local promptToPurchaseWithRobux = false
 local currentlySelectedButton
-local function initiatePurchaseButton(itemToDisplay)
+
+local function getPriceOfProductInRobux(productId)
+    local success, productInfo = pcall(function()
+        return MarketplaceService:GetProductInfo(productId, Enum.InfoType.Product)
+    end)
+
+    if success and productInfo then
+        return productInfo.PriceInRobux
+    else
+        warn("Failed to get price of robux with the given id: " .. tostring(productId))
+        return 0
+    end
+end
+
+local function initiatePurchaseButton(itemToDisplay, isLocked)
     local button = {}
     button.productId = tonumber(itemToDisplay:GetAttribute("ProductId"))
 
     button.instance = PurchaseButton_Template:Clone()
+    button.instance.lockImage.Visible = isLocked
     button.instance.Name = "PurchaseButton"
     button.instance.Visible = true
 
     button.item = itemToDisplay
-    button.item:PivotTo(CFrame.new(0.1, 3.5, 6.5) * CFrame.Angles(math.rad(-35),math.rad(180),0))
+    button.item:PivotTo(CFrame.new(0.1, 3.5, 6.5))
 
     -- Methods:
 
@@ -70,19 +85,22 @@ local function initiatePurchaseButton(itemToDisplay)
 
     function button:SwapParents(bool) -- true means equipped, false means unequipped
         -- changes button parent to either equipped selection or unequipped:
-        if bool == true then
+        if bool then
             -- change to equipped section:
             self.instance.Size = UI_EQUIPPED_SIZE
             self.instance.Parent = equippedFrame
+            print(true)
         else
             -- change to unequipped section:
             self.instance.Size = UI_SELECTION_SIZE
             self.instance.Parent = selectionFrame
+            print(false)
         end
         return
     end
 
     function button:closePurchase() -- will notify the player via the equipPurchase_screen that their purchase was complete
+        self.instance.lockImage.Visible = false
         equipPurchase_screen.Yes.Visible = false
         equipPurchase_screen.No.Visible = false
 
@@ -98,16 +116,22 @@ end
 
         if ClientVariables.player.unequippedWeapons:FindFirstChild(button.item.Name) then
             -- weapon is currently unequipped
+            equipPurchase_screen.purchaseWithRobuxFrame.Visible = false
             equipPurchase_screen.TextLabel.Text = "Equip?"
-        elseif ClientVariables.gunTool and (utilities.FindChildByNameWhichIsA(ClientVariables.player.Backpack, ClientVariables.gunTool.Name, "Tool") or utilities.FindChildByNameWhichIsA(ClientVariables.player.Character, ClientVariables.gunTool.Name, "Tool")) then
+        elseif ClientVariables.gunTool and ClientVariables.gunTool.Name == button.item.Name and (utilities.FindChildByNameWhichIsA(ClientVariables.player.Backpack, ClientVariables.gunTool.Name, "Tool") or utilities.FindChildByNameWhichIsA(ClientVariables.player.Character, ClientVariables.gunTool.Name, "Tool")) then
             -- weapon is already equipped
+            equipPurchase_screen.purchaseWithRobuxFrame.Visible = false
             equipPurchase_screen.TextLabel.Text = "Unequip?"
         else
             -- Weapon isn't owned
             equipPurchase_screen.purchaseWithRobuxFrame.Visible = true
+            equipPurchase_screen.purchaseWithRobuxFrame.PurchaseWithRobuxButton:WaitForChild("Amount").Text = getPriceOfProductInRobux(button.productId)
+            if tonumber(equipPurchase_screen.purchaseWithRobuxFrame.PurchaseWithRobuxButton.Amount.Text) <= 0 then equipPurchase_screen.purchaseWithRobuxFrame.Visible = false end
+
             equipPurchase_screen.TextLabel.Text = "Would you like to purchase the " .. button.item.Name .. " for " .. button.item:GetAttribute("Cost") .." cash?"
         end
         
+        promptToPurchaseWithRobux = false
         explanationOfItem.TextLabel.Text = itemToDisplay:GetAttribute("Description")
         currentlySelectedButton = button
         equipPurchase_screen.Visible = true
@@ -120,11 +144,24 @@ end
 end
 
 
-for _, weapon in pairs(game:GetService("ReplicatedStorage").GunToolPresets:GetChildren()) do
-    if weapon:IsA("Tool") then
-        shopManager.buttons[weapon.Name] = initiatePurchaseButton(weapon)
+ClientVariables.readyToInitButtons = false
+task.spawn(function()
+    while not ClientVariables.readyToInitButtons do task.wait() end
+
+    for _, weapon in pairs(game:GetService("ReplicatedStorage").GunToolPresets:GetChildren()) do
+        if weapon:IsA("Tool") then
+            local isLocked
+            if (ClientVariables.player.unequippedWeapons:FindFirstChild(weapon.Name)) or (ClientVariables.gunTool and ClientVariables.gunTool.Name == weapon.Name and (utilities.FindChildByNameWhichIsA(ClientVariables.player.Backpack, ClientVariables.gunTool.Name, "Tool"))) then
+                -- we own the weapon. Dont add the lock image
+                isLocked = false
+            else
+                isLocked = true
+            end
+            print(weapon.Name, isLocked)
+            shopManager.buttons[weapon.Name] = initiatePurchaseButton(weapon, isLocked)
+        end
     end
-end
+end)
 
 equipPurchase_screen.Yes.Activated:Connect(function()
 

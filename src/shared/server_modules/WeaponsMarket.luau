@@ -1,6 +1,7 @@
 local RemoteEvent = game:GetService("ReplicatedStorage"):WaitForChild("RemoteEvent")
 
 local DataManager = require(game.ReplicatedStorage.Shared.server_modules.DataManager)
+local utilities = require(game.ReplicatedStorage.Shared.utilities)
 
 local WeaponsMarket = {}
 
@@ -14,9 +15,11 @@ function WeaponsMarket:InitiateAccounts(plr)
         RemoteEvent:FireClient(plr, "changeUiDisplay", {UIToChange = "Kills_Display", killsAmount = killsAccounts[plr.UserId].Value})
     end)
 
+    local previousCashAmount = 0 -- for the new value, used to track how much has been added/removed from the old
     cashAccounts[plr.UserId] = Instance.new("IntValue")
     cashAccounts[plr.UserId]:GetPropertyChangedSignal("Value"):Connect(function()
-        RemoteEvent:FireClient(plr, "changeUiDisplay", {UIToChange = "Cash_Display", cashAmount = cashAccounts[plr.UserId].Value})
+        RemoteEvent:FireClient(plr, "changeUiDisplay", {UIToChange = "Cash_Display", cashAmount = cashAccounts[plr.UserId].Value, difference = cashAccounts[plr.UserId].Value - previousCashAmount})
+        previousCashAmount = cashAccounts[plr.UserId].Value
     end)
 
     killsAccounts[plr.UserId].Value = DataManager:GetData(plr, "Kills").Value or 0
@@ -52,12 +55,27 @@ function WeaponsMarket:GetWeaponsAccount(plr)
     return gunsAccounts[plr.UserId]
 end
 
-function WeaponsMarket:AddWeaponToWeaponsAccount(plr, weapon, equipped)
+function WeaponsMarket:GetEquippedWeaponName(plr)
+    for _, weapon in pairs(gunsAccounts[plr.UserId]) do
+        if weapon.equipped then
+            return weapon.name
+        end
+    end
+    return nil
+end
+
+function WeaponsMarket:AddWeaponToWeaponsAccount(plr, weaponName, equipped)
     if not equipped then
-        weapon.tool.Parent = plr.unequippedWeapons
+        utilities.createInstance("StringValue", {Name = weaponName, Parent = plr.unequippedWeapons})
+    else
+        print(weaponName)
+        if plr.unequippedWeapons:FindFirstChild(weaponName) then
+            plr.unequippedWeapons[weaponName]:Destroy()
+        end
     end
 
-    gunsAccounts[plr.UserId][weapon.name] = {name = weapon.name, equipped = equipped}
+    print(weaponName, gunsAccounts[plr.UserId], gunsAccounts[plr.UserId][weaponName])
+    gunsAccounts[plr.UserId][weaponName] = {name = weaponName, equipped = equipped}
     DataManager:SetData(plr, "OwnedWeapons", gunsAccounts[plr.UserId])
 end
 

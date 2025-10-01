@@ -38,16 +38,19 @@ local function createChamberTemplate(size : Vector3)
 end
 
 local function recoverStamina(gun)
-	gun.shooter.Humanoid.WalkSpeed /= gun.sprintSpeedMultiplier
-	
-	for i = gun.currentSprintStamina, gun.sprintStamina, 1 do
-		if gun.currentSprintStamina >= gun.sprintStamina then return end
+	for i = gun.currentSprintStamina.Value, gun.sprintStamina.Value, 1 do
+		if gun.currentSprintStamina.Value >= gun.sprintStamina.Value then return end
 		
-		gun.currentSprintStamina = i
+		gun.currentSprintStamina.Value = i
+		
 		if gun.isSprintPressed then break end
 		task.wait(0.1)
 		print(gun.currentSprintStamina)
 	end
+end
+
+local function onCurrentSprintStaminaChanged(plr, currentSprintStaminaValue, sprintStaminaValue)
+	RemoteEvent:FireClient(plr, "onCurrentSprintStaminaChanged", {staminaFraction = currentSprintStaminaValue / sprintStaminaValue})
 end
 
 -- Creaitng folders to store bullets and it's chambers:
@@ -65,23 +68,116 @@ local chamberCache = partCache.new(createChamberTemplate(Vector3.new(0.284, 0.07
 
 
 local GunToolPresets = ReplicatedStorage:WaitForChild("GunToolPresets")
+
 Gun.gunPresets = {
 	["AK-15_Preset"] = {
 		name = "AK-15",
 		tool = GunToolPresets["AK-15"],
+
+		animations = {
+			Idle = "rbxassetid://122506501631928",
+			Recoil = "rbxassetid://76152974931976",
+			Reload = "rbxassetid://118850012077118",
+			Tact_Reload = "rbxassetid://124526723005619"
+		},
+
+		sounds = {
+
+		},
+
 		cost = 10000,
-		killsRequired = 25,
-		productId = 3382902336,
+		killsRequired = 15,
+		productId = 3418859869,
 		description = "Assault Rifle descended from the legendary AK-47 modernized.",
+		
+		fireRate = 0.0857, -- bullets per second
+		fullAuto = true,
+		damage = 34,
 
-		fireRate = 0.0857,
 		sprintSpeedMultiplier = 1.5, -- May change in the future, especially if attachments cause weigh-down, but not our concern as of now.
+		animationSpeedMultiplier = 1, -- Higher numbers increase animation speed, such as for reloading
+		reloadDuration = 2.3,
+		tacticalReloadDuration = 2.3,
+		tacticalReloadSoundStart = 0, -- some guns start later in the sound reload cause of weird thing they do first like MP5
 
-		magCurrent = 30, -- how many bullets are currently in the clip
 		magCapacity = 30, -- how many bullets can fit in a clip
-		ammoCurrent = 90, -- how many bullets the shooter is holding not in the clip
-		ammoMax = 180 -- the maximum amount of bullets the shooter can hold not in the clip
-	}
+		magCurrent = 30, -- how many bullets are currently in the clip
+		ammoMax = 180, -- the maximum amount of bullets the shooter can hold not in the clip
+		ammoCurrent = 90 -- how many bullets the shooter is holding not in the clip
+	},
+
+	["MP5_Preset"] = {
+		name = "MP5",
+		tool = GunToolPresets:WaitForChild("MP5"),
+
+		animations = {
+			Idle = "rbxassetid://75699950963041",
+			Recoil = "rbxassetid://83708487430497",
+			Reload = "rbxassetid://99089822260607",
+			Tact_Reload = "rbxassetid://139503615906576"
+		},
+
+		sounds = {
+
+		},
+
+		cost = 2000,
+		killsRequired = 15,
+		productId = 3418859796,
+		description = "Accurate military-grade SMG with high firerate.",
+		
+		fireRate = 0.075,
+		fullAuto = true,
+		damage = 27,
+
+		sprintSpeedMultiplier = 1.7, -- May change in the future, especially if attachments cause weigh-down, but not our concern as of now.
+		animationSpeedMultiplier = 1,
+		reloadDuration = 3,
+		tacticalReloadDuration = 2,
+		tacticalReloadSoundStart = 0.6, -- When the reload animation should start. The MP5 has the weird chamber so its special.
+
+		magCapacity = 30, -- how many bullets can fit in a clip
+		magCurrent = 30, -- how many bullets are currently in the clip
+		ammoMax = 180, -- the maximum amount of bullets the shooter can hold not in the clip
+		ammoCurrent = 90 -- how many bullets the shooter is holding not in the clip
+	},
+
+	["Glock 17_Preset"] = {
+		name = "Glock 17",
+		tool = GunToolPresets:WaitForChild("Glock 17"),
+
+		animations = {
+			Idle = "rbxassetid://128097338970357",
+			Recoil = "rbxassetid://85190065349279",
+			No_Ammo_Effect = "rbxassetid://88886520634588",
+			Reload = "rbxassetid://128993757422081",
+			Tact_Reload = "rbxassetid://129645969251542"
+		},
+
+		sounds = {
+
+		},
+
+		cost = 0,
+		killsRequired = 0,
+		productId = 0, -- starter weapon dont need to be bought w/ robux
+		description = "Reliable 9mm pistol used by law enforcement and military alike.",
+		
+		fireRate = 0.15,
+		fullAuto = false,
+		damage = 40,
+
+		sprintSpeedMultiplier = 2, -- May change in the future, especially if attachments cause weigh-down, but not our concern as of now.
+		animationSpeedMultiplier = 1,
+		reloadDuration = 2.2,
+		tacticalReloadDuration = 1.3,
+		tacticalReloadSoundStart = 0, -- some guns start later in the sound reload cause of weird thing they do first like MP5
+
+		magCapacity = 17, -- how many bullets can fit in a clip
+		magCurrent = 17, -- how many bullets are currently in the clip
+		ammoMax = 102, -- the maximum amount of bullets the shooter can hold not in the clip
+		ammoCurrent = 51 -- how many bullets the shooter is holding not in the clip
+	},
 }
 Gun.presetProductIds = {}
 for i, preset in pairs(Gun.gunPresets) do
@@ -117,17 +213,17 @@ chamberBehavior.CosmeticBulletProvider = chamberCache
 Gun.activeGuns = {}
 
 function Gun.new(character, config)
+	print(config)
 	local self = setmetatable({}, Gun)
 
 	self.shooter = character
 	self.plr = Players:GetPlayerFromCharacter(self.shooter)
 
-	self.name = config.name
-	self.description = config.description
-	self.cost = config.cost
-	self.killsRequired = config.killsRequired
+	for i, v in pairs(config) do
+		self[i] = v
+	end
 
-	self.tool = config.tool:Clone()
+	self.tool = self.tool:Clone() -- need to clone the config tool so there is not just one
 	self.tool.Name = self.name
 
 	-- Parts:
@@ -141,20 +237,6 @@ function Gun.new(character, config)
 	self.isSprintPressed = false
 	self.isEquipped = false
 
-	-- Numbers:
-
-	self.fireRate = config.fireRate
-	self.sprintSpeedMultiplier = config.sprintSpeedMultiplier
-	self.sprintStamina = 100
-	self.currentSprintStamina = self.sprintStamina
-
-	-- Ammo:
-
-	self.magCurrent = config.magCurrent
-	self.magCapacity = config.magCapacity
-	self.ammoCurrent = config.ammoCurrent
-	self.ammoMax = config.ammoMax
-
 	-- Attachments:
 
 	self.firePoint = self.tool.BodyAttach.firePoint
@@ -163,7 +245,7 @@ function Gun.new(character, config)
 	-- Folders:
 
 	self.Gun_Sounds = utilities.makeDictionaryFromFolder(self.tool:WaitForChild("Sounds"))
-	self.Animations = utilities.makeAnimationTracksFromAnimations(self.tool:WaitForChild("Animations"):GetChildren(), self.shooter:WaitForChild("Humanoid"):WaitForChild("Animator"))
+	self.Animations = utilities.makeAnimationTracksFromAnimations(self.animations, self.shooter:WaitForChild("Humanoid"):WaitForChild("Animator"))
 	self.Values = self.tool:FindFirstChild("Values") or utilities.createInstance("Folder", {Name = "Values", Parent = self.tool})
 
 	-- FastCast:
@@ -173,9 +255,17 @@ function Gun.new(character, config)
 
 	-- Misc:
 
+	self.ogWalkSpeed = self.shooter.Humanoid.WalkSpeed
 	self.bulletFlash = self.firePoint.bulletFlash
 	self.bulletSmoke = self.firePoint.bulletSmoke
+
+	-- Numbers:
+
 	self.shootDebounce = utilities.createInstance("BoolValue", {Name = "shootDebounce", Value = false, Parent = self.Values})
+	self.isFullAuto = utilities.createInstance("BoolValue", {Name = "IsFullAuto", Value = self.fullAuto, Parent = self.Values})
+	self.sprintStamina = utilities.createInstance("NumberValue", {Name = "SprintStamina", Value = 100, Parent = self.Values})
+	self.currentSprintStamina = utilities.createInstance("NumberValue", {Name = "CurrentSprintStamina", Value = self.sprintStamina.Value, Parent = self.Values})
+	
 
 	-- Connections:
 
@@ -206,7 +296,11 @@ function Gun.new(character, config)
 		end),
 		self.chamberCaster.RayHit:Connect(function(cast, result, velocity, bullet)
 			self:ChamberImpact(cast, result, velocity, bullet)
+		end),
+		self.currentSprintStamina:GetPropertyChangedSignal("Value"):Connect(function()
+			onCurrentSprintStaminaChanged(self.plr, self.currentSprintStamina.Value, self.sprintStamina.Value)
 		end)
+
 	}
 
 
@@ -215,10 +309,16 @@ function Gun.new(character, config)
 end
 
 function Gun:Remove()
+	self.tool:Destroy()
 	for _, connection in pairs(self.connections) do
 		connection:Disconnect()
 	end
-	self.tool:Destroy()
+	self.connections = nil
+
+	for i in pairs(self) do
+		self[i] = nil
+	end
+	self = nil
 end
 
 
@@ -236,7 +336,7 @@ function Gun:Fire(ray)
 	local startPosition = self.firePoint.WorldPosition -- dont use position on attachments because position is relative. Instead, use WorldPosition (the 3D position)
 	local otherStartPosition = self.chamberPoint.WorldPosition
 	local direction = (endPoint - startPosition).Unit
-	local otherDirection = (self.tool.Mesh.Body.CFrame.LookVector).Unit
+	local otherDirection = (self.chamberPoint.WorldCFrame.LookVector).Unit
 	
 	self.bulletCaster:Fire(startPosition, direction, 1000, castBehavior) -- like a normal raycast, with the startPosition as the first parameter, and the direction as the second. Except the third parameter is a velocity value. It can be a number, or a Vector3 value
 	self.chamberCaster:Fire(otherStartPosition, otherDirection, 10, chamberBehavior)
@@ -260,6 +360,12 @@ function Gun:Fire(ray)
 	end)
 -- running this FastCast alone wouldn't do anything visually. This is why we enabled the .VisualizeCasts property so we can see an example of what would happen
 	self.magCurrent = self.magCurrent - 1
+
+	if self.magCurrent <= 0 then
+		-- some guns, like the Glock, M1 Garand, do something unique on the last round, such as the glock slide not returning, or the M1 Garand clip flying out.
+		if self.Animations.No_Ammo_Effect then self.Animations.No_Ammo_Effect:Play() end
+	end
+
 	
 	if not self.plr then return true end
 	RemoteEvent:FireClient(self.plr, "changeUiDisplay", {UIToChange = "Ammo_Display", magCurrent = self.magCurrent, magCapacity = self.magCapacity})
@@ -267,7 +373,9 @@ function Gun:Fire(ray)
 end
 
 function Gun:Reload()
-	if self.magCurrent == 0 and self.isReloading == false and self.ammoCurrent > 0 then -- Reload when the entire mag is empty
+	if self.ammoCurrent <= 0 or self.isReloading then return end
+
+	if self.magCurrent == 0 then -- Reload when the entire mag is empty
 		
 		self.isReloading = true
 
@@ -277,11 +385,11 @@ function Gun:Reload()
 
 		self.Animations.Reload:Play()
 		self.Gun_Sounds.Reload:Play()
-		wait(1.25)
+		wait(self.reloadDuration * 0.357)
 		self.mag.Transparency = 1
-		wait(0.25)
+		wait(self.reloadDuration * 0.071)
 		self.mag.Transparency = 0
-		wait(2)
+		wait(self.reloadDuration * 0.571)
 		-- total wait() time should equal: 3.5
 		
 		if self.ammoCurrent >= self.magCapacity then
@@ -298,7 +406,7 @@ function Gun:Reload()
 		end
 		self.isReloading = false
 		
-	elseif self.magCurrent < self.magCapacity and self.isReloading == false and self.ammoCurrent > 0 then -- tactical reload for when the mag is only partially empty
+	elseif self.magCurrent < self.magCapacity then -- tactical reload for when the mag is only partially empty
 		
 		local tacticalReloadSFX = self.Gun_Sounds.Reload
 		
@@ -306,9 +414,10 @@ function Gun:Reload()
 			tacticalReloadSFX.Loaded:Wait()
 		end
 		self.Animations.Tact_Reload:Play()
+		tacticalReloadSFX.TimePosition = self.tacticalReloadSoundStart -- some guns get the weird startposition treatment due to the nature of a full reload vs tactical.
 		tacticalReloadSFX:Play()
 		
-		delay(2.3, function()
+		delay(self.tacticalReloadDuration, function()
 			tacticalReloadSFX:Stop()
 		end)
 		
@@ -318,12 +427,12 @@ function Gun:Reload()
 			RemoteEvent:FireClient(self.plr, "iconChange", {magCurrent = self.magCurrent, isEquipped = self.isEquipped})
 		end
 		
-		wait(1.25)
+		task.wait(self.tacticalReloadDuration * 0.543)
 		self.mag.Transparency = 1
-		wait(0.25)
+		task.wait(self.tacticalReloadDuration * 0.108)
 		self.mag.Transparency = 0
-		wait(0.8)
-		-- total wait() time should equal: 2.3
+		task.wait(self.tacticalReloadDuration * 0.347)
+		-- total wait() time should equal 'tactical reload duration'
 		
 		if self.ammoCurrent >= 30 then
 			local loss = self.magCapacity - self.magCurrent
@@ -341,29 +450,31 @@ function Gun:Reload()
 		self.isReloading = false
 		
 	end
+	if self.Animations.No_Ammo_Effect then self.Animations.No_Ammo_Effect:Stop() end
 end
 
 function Gun:Sprint()
 	if not self.isSprintPressed then
 		self.isSprintPressed = true
-		self.shooter.Humanoid.WalkSpeed *= self.sprintSpeedMultiplier
+		self.shooter.Humanoid.WalkSpeed = self.ogWalkSpeed * self.sprintSpeedMultiplier
 		-- RemoteFunction:InvokeClient(self.plr, "waitForSprintPressToEnd")
 		
 		-- Drain:
 		while self.isSprintPressed do
 			task.wait(0.1)
 			if self.shooter.Humanoid.MoveDirection.Magnitude == 0 then 
-				if self.currentSprintStamina >= self.sprintStamina then continue end
+				if self.currentSprintStamina.Value >= self.sprintStamina.Value then continue end
 
-				self.currentSprintStamina += 1
-				print(self.currentSprintStamina)
+				self.currentSprintStamina.Value += 1
+				print(self.currentSprintStamina.Value)
 				continue
 			else
-				self.currentSprintStamina -= 1
+				self.currentSprintStamina.Value -= 1
 				if not self.isSprintPressed then break end
-				print(self.currentSprintStamina)
+				print(self.currentSprintStamina.Value)
 			end
 		end
+		self.shooter.Humanoid.WalkSpeed = self.ogWalkSpeed
 		self.isSprintPressed = false
 		
 		-- Recovery:
@@ -379,7 +490,7 @@ function Gun:Equip()
 
 	self.Gun_Sounds.Equip:Play()
 	self.isEquipped = true
-	RemoteEvent:FireClient(self.plr, "onEquipped", {isEquipped = self.isEquipped})
+	RemoteEvent:FireClient(self.plr, "onEquipped", {isEquipped = self.isEquipped, magCurrent = self.magCurrent, magCapacity = self.magCapacity, ammoCurrent = self.ammoCurrent})
 	self.Animations.Idle:Play()
 	params.FilterDescendantsInstances = {self.tool.Parent, bulletsFolder, chamberFolder}
 	self.Gun_Sounds.Equip:Play()
@@ -428,11 +539,11 @@ function Gun:BulletImpact(cast, result, velocity, bullet)
 		if rayInstance == rayInstance.Parent:FindFirstChild("Head") then
 			-- print("You hit "..tostring(rayInstance.Parent) .." by headshot!")
 			RemoteEvent:FireClient(self.plr, "characterHit", {hitSound = self.Gun_Sounds.Headshot})
-			rayInstance.Parent.Humanoid:TakeDamage(80)
+			rayInstance.Parent.Humanoid:TakeDamage(self.damage*2)
 		else
 			-- print("You hit "..tostring(rayInstance.Parent) .."'s "..tostring(rayInstance.Name))
 			RemoteEvent:FireClient(self.plr, "characterHit", {hitSound = self.Gun_Sounds.Hit})
-			rayInstance.Parent.Humanoid:TakeDamage(40)
+			rayInstance.Parent.Humanoid:TakeDamage(self.damage)
 		end
 	
 		if resultHumanoid and resultHumanoid.Health <= 0 then

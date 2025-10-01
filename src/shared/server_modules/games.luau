@@ -1,29 +1,50 @@
 local Players = game:GetService("Players")
 
+local RemoteEvent = game:GetService("ReplicatedStorage"):WaitForChild("RemoteEvent")
+
 local utilities = require(game.ReplicatedStorage.Shared.utilities)
 local WeaponsMarket = require(game.ReplicatedStorage.Shared.server_modules.WeaponsMarket)
 
 local games = {}
 
-local matchStarted = false
-local countdown = utilities.createInstance("IntValue", {Name = "Countdown", Value = 0})
-
 local currentRoundPlayers = {}
 local playerScores = {}
+local winnerId = nil -- will be the id of the game winner to announce to each client
+
+local gamePeriod = "Ongoing"
+local countdown = utilities.createInstance("IntValue", {Name = "Countdown", Value = 0})
+countdown:GetPropertyChangedSignal("Value"):Connect(function()
+    RemoteEvent:FireAllClients("CountdownChange", {gamePeriod = gamePeriod, Value = countdown.Value, playerScores = playerScores, winnerId = winnerId})
+end)
+
+
+-- function games.sendPlayersInRoundToClients()
+--     RemoteEvent:FireAllClients("sendPlayerScoresToClients", {playerScores = playerScores})
+-- end
+
+function games.getGamePeriod()
+    return gamePeriod
+end
 
 function games.spawnCharacter(char)
     -- Spawn at a random spot on the map. If team deathmatch, make sure to spawn on team SpawnLocation:
-    char.HumanoidRootPart.CFrame = CFrame.new(0, 1, 0)
+    local spawnPoints = game.Workspace.SpawnPoints:GetChildren()
+    local spawnCFrame = spawnPoints[math.random(1, #spawnPoints)].CFrame
+
+    char.HumanoidRootPart.CFrame = spawnCFrame
+    if gamePeriod ~= "Ongoing" then
+        char.HumanoidRootPart.Anchored = true
+    end
 end
 
 function games.addPlayerToRound(player)
-    if currentRoundPlayers[player.Name] ~= nil then return end
+    if currentRoundPlayers[player.UserId] ~= nil then return end
 
-    currentRoundPlayers[player.Name] = player
-    playerScores[player.Name] = 0
-    print(player.Name .. "Has been added to the games!")
+    currentRoundPlayers[player.UserId] = player
+    playerScores[player.UserId] = 0
+    print(player.Name .. " has been added to the games!")
 
-    if not matchStarted then
+    if gamePeriod ~= "Ongoing" then
         player.Character.HumanoidRootPart.Anchored = true
     end
 end
@@ -31,14 +52,14 @@ end
 local gamemodes = { 
     {
         gamemode_name = "Free For All",
-        timer = 120,
-        run = function() -- will initiate a FreeForAll match
+        timer = 12,
+        run = function() -- Determines how scoring will work for FFA
             for _, player in pairs(currentRoundPlayers) do
 
                 -- for free-for-all, we track kills and add that to playerScores:
                 local killsTrackerConnect
                 killsTrackerConnect = WeaponsMarket:GetKillsAccount(player):GetPropertyChangedSignal("Value"):Connect(function()
-                    playerScores[player.Name] += 1
+                    playerScores[player.UserId] += 1
                 end)
 
                 -- disconnect tracking kills after the round ends:
@@ -61,19 +82,44 @@ function games.run()
     local chosenGamemode = gamemodes[math.random(1, #gamemodes)]
 
 
+    -- Clear old-round data for the new:
+    table.clear(currentRoundPlayers)
+    table.clear(playerScores)
+
+    -- Intermission:
+    gamePeriod = "Intermission"
+    countdown.Value = 10
+    for i = countdown.Value, 0, -1 do
+        countdown.Value = i
+        task.wait(1)
+    end
+
+
     -- Gather the players:
-    matchStarted = false
-    for _, player in pairs(currentRoundPlayers) do -- currentRoundPlayers gets added as players join the game and press Play
+    for _, player in pairs(game.Players:GetPlayers()) do -- currentRoundPlayers gets added as players join the game and press Play
+        games.addPlayerToRound(player)
         if player.IsLoaded.Value then
             games.spawnCharacter(player.Character)
         end
     end
 
 
+    -- Restart intermission if not enough players:
+    if utilities.getLength(currentRoundPlayers) < 2 then
+        gamePeriod = "Not enough players. Restarting intermission.."
+        countdown.Value = 3
+        for i = countdown.Value, 0, -1 do
+            countdown.Value = i
+            task.wait(1)
+        end
+        return
+    end
+
+
     -- Countdown until match starts:
+    gamePeriod = "Countdown"
     for i = 5, 0, -1 do
         countdown.Value = i
-        warn(countdown.Value)
         task.wait(1)
     end
 
@@ -85,40 +131,44 @@ function games.run()
         if not player.IsLoaded then continue end
         player.Character.HumanoidRootPart.Anchored = false
     end
-    matchStarted = true
+    gamePeriod = "Ongoing"
 
 
     -- Start a timer to countdown until match ends:
     countdown.Value = chosenGamemode.timer
     for i = countdown.Value, 0, -1 do
         countdown.Value = i
-        print(countdown.Value)
         task.wait(1)
     end
 
     -- Match ended! Freeze players, count scores, declare winner!
-    matchStarted = false
+    gamePeriod = "Ended"
     for _, plr in pairs(currentRoundPlayers) do
         if plr.Character then
             plr.Character.HumanoidRootPart.Anchored = true
         end
     end
 
-    local max = -math.huge -- starts the comparison with the smallest possible number.
-    local winner = nil
-    for plr, score in pairs(playerScores) do
+    local max = 0 -- starts the comparison with the smallest possible number.
+    
+    for plrId, score in pairs(playerScores) do
         if score > max then
             max = score
-            winner = plr
+            winnerId = plrId
         end
     end
-    WeaponsMarket:AwardCash(winner, 200)
 
-    -- Intermission:
-    countdown.Value = 15
-    for i = countdown.Value, 0, -1 do
-        countdown.Value = i
+    if winnerId then
+        local winner = Players:GetPlayerByUserId(winnerId)
+        warn(winner)
+        WeaponsMarket:AwardCash(winner, 200)
     end
+    
+    for i = 5, 0, -1 do
+        countdown.Value = i
+        task.wait(1)
+    end
+    winnerId = nil
 end
 
 return games

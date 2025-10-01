@@ -29,10 +29,9 @@ end)
 local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")
 local camera = workspace.CurrentCamera
 local isHolding = false
-ClientVariables.menuMusic = utilities.createInstance("Sound", {Name = "menuMusic", SoundId = "rbxassetid://98904394371808", Looped = true})
+ClientVariables.menuMusic = utilities.createInstance("Sound", {Name = "menuMusic", SoundId = "", Looped = true, Parent = game:GetService("SoundService")})
 
-
-local PlayScreenFocus = game:GetService("Workspace").PlayScreenFocus
+local PlayScreenFocus = game:GetService("Workspace"):WaitForChild("PlayScreenFocus")
 -- Mirosoft Copilot object-circling code cause idk how to do it:
 
 local center = PlayScreenFocus.Position -- center of the circle
@@ -54,29 +53,39 @@ end)
 local function onChildChanged(child)
     if child:IsA("Tool") and child:GetAttribute("Gun") then
         if child.Parent == ClientVariables.player.Backpack or child.Parent == ClientVariables.player.Character then
+            warn("Equip")
             -- equipped weapon
             ClientVariables.gunTool = child
+            ShopManager.buttons[child.Name]:SwapParents(true)
 
             if child.Parent == ClientVariables.player.Character and ClientVariables.player.Character.Parent then
-                warn("Activated")
                 move_arms.activate()
             else
                 move_arms.deactivate()
             end
-
-            ShopManager.buttons[child.Name]:SwapParents(true)
         else
+            warn("Unequip")
             ShopManager.buttons[child.Name]:SwapParents(false)
         end
     end
 end
 
+local function startInputToServer(inputTable, gameProcessedEvent) -- sends to the server our input and where we're firing at
+    local screenCenter = camera.ViewportSize / 2
+    ClientVariables.ray = camera:ViewportPointToRay(screenCenter.X, screenCenter.Y)
+    RemoteEvent:FireServer("inputStarted", {input = inputTable, gameProcessedEvent = gameProcessedEvent, ray = ClientVariables.ray})
+
+end
+
 local function onCharacterAdded(character)
     ClientVariables.camera.CameraSubject = game:GetService("Workspace"):WaitForChild("PlayScreenFocus")
-    ClientVariables.camera.CameraType = Enum.CameraType.Track
+    ClientVariables.camera.CameraType = Enum.CameraType.Orbital
     ClientVariables.Gun_GUI:WaitForChild("PlayButton").Visible = true
     ClientVariables.Gun_GUI.Game_Title.Visible = true
     ClientVariables.Gun_GUI.ShopButton.Visible = true
+    ClientVariables.Gun_GUI.Cash_Display.Visible = true
+    ClientVariables.Gun_GUI.Kills_Display.Visible = true
+    ClientVariables.Gun_GUI.round_leaderboard.Visible = false
 
 
     ClientVariables.menuMusic:Play()
@@ -118,13 +127,15 @@ UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
     if gameProcessedEvent then return end
     
     if inputType == "ShootInputs" then
-        if ClientVariables.gunTool and not ClientVariables.gunTool.Values.shootDebounce.Value and ClientVariables.gunTool.Activated then
+        if ClientVariables.gunTool and (not ClientVariables.gunTool.Values.shootDebounce.Value or not ClientVariables.gunTool.Values.IsFullAuto.Value) and ClientVariables.gunTool.Activated then
             isHolding = true
-            while isHolding and ClientVariables.gunTool.Equipped do
-                local screenCenter = camera.ViewportSize / 2
-                ClientVariables.ray = camera:ViewportPointToRay(screenCenter.X, screenCenter.Y)
-                RemoteEvent:FireServer("inputStarted", {input = inputTable, gameProcessedEvent = gameProcessedEvent, ray = ClientVariables.ray})
-                task.wait()
+            if ClientVariables.gunTool.Values.IsFullAuto.Value then
+                while isHolding and ClientVariables.gunTool.Equipped do
+                    startInputToServer(inputTable, gameProcessedEvent)
+                    task.wait()
+                end
+            else
+                startInputToServer(inputTable, gameProcessedEvent)
             end
         end
     else
@@ -160,6 +171,9 @@ ClientVariables.Gun_GUI.PlayButton.Activated:Connect(function()
     ClientVariables.Gun_GUI.Game_Title.Visible = false
     ClientVariables.Gun_GUI.ShopButton.Visible = false
     ClientVariables.Gun_GUI.shop_frame.Visible = false
+    ClientVariables.Gun_GUI.Cash_Display.Visible = false
+    ClientVariables.Gun_GUI.Kills_Display.Visible = false
+    ClientVariables.Gun_GUI.round_leaderboard.Visible = true
 
     ClientVariables.menuMusic:Stop()
     

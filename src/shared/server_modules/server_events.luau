@@ -19,11 +19,17 @@ local games = require(game.ReplicatedStorage.Shared.server_modules.games)
 local function receiveServerEvent(plr, protocol, data)
 
     if protocol == "play" then
-        -- if plr.Character and plr.Character.Parent then return end -- character should not exist when the play button is pressed
-        plr.CameraMode = Enum.CameraMode.LockFirstPerson
+        if plr.IsLoaded.Value then return end -- character should not exist when the play button is pressed
+        
+        if game.PlaceId > 0 then -- we dont wanna force lock in studio for testing stuff
+            plr.CameraMode = Enum.CameraMode.LockFirstPerson
+        end
+        
         plr.Character.HumanoidRootPart.Anchored = false
         plr.IsLoaded.Value = true
-        games.addPlayerToRound(plr)
+        if games.getGamePeriod() == "Ongoing" then
+            games.addPlayerToRound(plr)
+        end
         games.spawnCharacter(plr.Character)
         return
     end
@@ -33,7 +39,7 @@ local function receiveServerEvent(plr, protocol, data)
     if not inputType and protocol ~= "move_arms" then return end -- only allow specific inputs
 
     local plrGun = Gun.activeGuns[plr.Name]
-    if (not plrGun or not plrGun.isEquipped or not plr.IsLoaded.Value) and protocol ~= "move_arms" then return end -- they should absolutely have their gun equipped to use it
+    if (not plrGun or not plrGun.isEquipped or games.getGamePeriod() ~= "Ongoing") and protocol ~= "move_arms" then return end -- they should absolutely have their gun equipped to use it
 
 
     if protocol == "inputStarted" then
@@ -78,20 +84,30 @@ local function receiveServerInvoke(plr, protocol, data)
             
             -- do we own the gun?
             local ownedWeapons = WeaponsMarket:GetWeaponsAccount(plr)
+            -- Checks if the desired weapon is equipped:
             local equippedWeapon = utilities.FindChildByNameWhichIsA(plr.Backpack, data.name, "Tool") or utilities.FindChildByNameWhichIsA(plr.Character, data.name, "Tool")
             
             if ownedWeapons[data.name] and ownedWeapons[data.name].equipped then -- The weapon is equipped already
-                equippedWeapon.Parent = plr.unequippedWeapons
-                WeaponsMarket:AddWeaponToWeaponsAccount(plr, plrGun, false)
-                -- plrGun:Remove()
+                
+                if plrGun and plrGun.name then
+                    print("Unequipping weapon", plrGun.name)
+                    WeaponsMarket:AddWeaponToWeaponsAccount(plr, plrGun.name, false)
+                    plrGun:Remove()
+                end
 
             elseif ownedWeapons[data.name] and not ownedWeapons[data.name].equipped then -- The weapon is unequipped
-                plr.unequippedWeapons:FindFirstChild(data.name).Parent = plr.Backpack
-                WeaponsMarket:AddWeaponToWeaponsAccount(plr, plrGun, true)
 
                 -- For now we only allow one weapon to be equipped, which is intended to be changed later:
-                -- plrGun.tool.Parent = plr.unequippedWeapons
-                -- plrGun:Remove()
+                if plrGun and plrGun.name then -- unequips current weapon:
+                    print("Unequipping CURRENT weapon", plrGun.name)
+                    WeaponsMarket:AddWeaponToWeaponsAccount(plr, plrGun.name, false)
+                    plrGun:Remove()
+                end
+            
+                plrGun = Gun.new(plr.Character, config)
+                plrGun.tool.Parent = plr.Backpack
+                print("Equipping unequipped weapon", data.name)
+                WeaponsMarket:AddWeaponToWeaponsAccount(plr, plrGun.name, true)
 
             else -- The weapon isn't owned yet
                 -- make sure they have enough moneys and enough kills:
@@ -100,10 +116,10 @@ local function receiveServerInvoke(plr, protocol, data)
                 then
                     -- charge and give weapon:
                     WeaponsMarket:SubtractCash(plr, config.cost)
-                    local desiredWeapon = Gun.new(plr.Character, config)
-                    desiredWeapon.tool.Parent = plr.unequippedWeapons
+                    -- local desiredWeapon = Gun.new(plr.Character, config)
+                    -- desiredWeapon.tool.Parent = plr.unequippedWeapons
 
-                    WeaponsMarket:AddWeaponToWeaponsAccount(plr, desiredWeapon, false)
+                    WeaponsMarket:AddWeaponToWeaponsAccount(plr, config.name, false)
 
                     return "purchased"
                 else
@@ -133,10 +149,12 @@ local function onProcessReceipt(receiptInfo)
 	
     local presetWithGivenProductId = Gun.presetProductIds[receiptInfo.ProductId]
 	if presetWithGivenProductId then
-		local desiredWeapon = Gun.new(player.Character, Gun.gunPresets[presetWithGivenProductId])
-        desiredWeapon.tool.Parent = player.unequippedWeapons
-        WeaponsMarket:AddWeaponToWeaponsAccount(player, desiredWeapon, false)
-		RemoteEvent:FireClient(player, "weaponProductPurchased", {weaponName = desiredWeapon.name})
+		-- local desiredWeapon = Gun.new(player.Character, Gun.gunPresets[presetWithGivenProductId])
+        -- desiredWeapon.tool.Parent = player.unequippedWeapons
+
+        local desiredWeaponName = Gun.gunPresets[presetWithGivenProductId].name
+        WeaponsMarket:AddWeaponToWeaponsAccount(player, desiredWeaponName, false)
+		RemoteEvent:FireClient(player, "weaponProductPurchased", {weaponName = desiredWeaponName})
 	end
 
 	return Enum.ProductPurchaseDecision.PurchaseGranted -- We can now safely close the purchase
