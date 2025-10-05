@@ -19,8 +19,8 @@ local RunService = game:GetService("RunService")
 
 local ClientVariables = require(game.ReplicatedStorage.Shared.client_modules.ClientVariables)
 require(game.ReplicatedStorage.Shared.client_modules.client_events)
-local utilities = require(game.ReplicatedStorage.Shared.utilities)
 local ShopManager = require(game.ReplicatedStorage.Shared.client_modules.shopManager)
+local utilities = require(game.ReplicatedStorage.Shared.utilities)
 local move_arms
 task.spawn(function()
     move_arms = require(game.ReplicatedStorage.Shared.client_modules.move_arms)

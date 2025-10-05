@@ -52,7 +52,7 @@ end
 local gamemodes = { 
     {
         gamemode_name = "Free For All",
-        timer = 12,
+        timer = 120,
         run = function() -- Determines how scoring will work for FFA
             for _, player in pairs(currentRoundPlayers) do
 
@@ -105,14 +105,16 @@ function games.run()
 
 
     -- Restart intermission if not enough players:
-    if utilities.getLength(currentRoundPlayers) < 2 then
-        gamePeriod = "Not enough players. Restarting intermission.."
-        countdown.Value = 3
-        for i = countdown.Value, 0, -1 do
-            countdown.Value = i
-            task.wait(1)
+    if game.PlaceId > 0 then -- not concerned about the # of players in studio testing
+        if utilities.getLength(currentRoundPlayers) < 2 then
+            gamePeriod = "Not enough players. Restarting intermission.."
+            countdown.Value = 3
+            for i = countdown.Value, 0, -1 do
+                countdown.Value = i
+                task.wait(1)
+            end
+            return
         end
-        return
     end
 
 

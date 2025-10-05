@@ -8,7 +8,7 @@ Utilities.userInputTypes = {
     -- User Input Types
     ShootInputs = {[Enum.UserInputType.MouseButton1] = true, [Enum.KeyCode.ButtonR2] = true},
     ReloadInputs = {[Enum.KeyCode.R] = true, [Enum.KeyCode.ButtonX] = true},
-    SprintInputs = {[Enum.KeyCode.LeftShift] = true, [Enum.KeyCode.Thumbstick1] = true}
+    SprintInputs = {[Enum.KeyCode.LeftShift] = true, [Enum.KeyCode.ButtonL3] = true}
     -- AimInputs = {[Enum.UserInputType.MouseButton2] = true, [Enum.KeyCode.ButtonL2] = true},
 }
 

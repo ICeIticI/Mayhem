@@ -21,6 +21,9 @@ local function createBulletTemplate(size : Vector3)
 	bulletTemplate.Material = Enum.Material.Neon
 	bulletTemplate.Size = size
 	bulletTemplate.CanCollide = false
+	bulletTemplate.EnableFluidForces = false
+	bulletTemplate.CanQuery = false
+	bulletTemplate.CastShadow = false
 	bulletTemplate.Anchored = false
 
 	return bulletTemplate
