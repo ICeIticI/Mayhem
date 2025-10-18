@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
 local ClientVariables = require(game.ReplicatedStorage.Shared.client_modules.ClientVariables)
+local utilities = require(game.ReplicatedStorage.Shared.utilities)
 local shopManager = require(game.ReplicatedStorage.Shared.client_modules.shopManager)
 
 local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")
@@ -88,6 +89,15 @@ local function receiveClientEvent(protocol, data)
 		
 	elseif protocol == "onCurrentSprintStaminaChanged" then
 		ClientVariables.Gun_GUI.staminaBar.currentStamina.Size = UDim2.fromScale(data.staminaFraction, ClientVariables.Gun_GUI.staminaBar.currentStamina.Size.Y.Scale)
+
+	elseif protocol == "setupAnimations" then
+		ClientVariables.tracks = utilities.makeAnimationTracksFromIds(data.animationIds, ClientVariables.player.Character:WaitForChild("Humanoid"):WaitForChild("Animator"))
+
+	elseif protocol == "playAnimation" then
+		ClientVariables.tracks[data.animName]:Play()
+
+	elseif protocol == "stopAnimation" then
+		ClientVariables.tracks[data.animName]:Stop()
 	end
 end
 

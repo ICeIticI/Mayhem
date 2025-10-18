@@ -2,20 +2,33 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 
--- -- Do some important character stuff before calling in modules:
--- local function onPlayerAdded(player)
---     -- Load UI in on join:
---     if player ~= Players.LocalPlayer then return end
---     ReplicatedStorage:WaitForChild("ScreenGui").Parent = player.PlayerGui
--- end
--- if Players.LocalPlayer then
---     onPlayerAdded(Players.LocalPlayer)
--- end
--- Players.PlayerAdded:Connect(function(player)
---     onPlayerAdded(player)
--- end)
+-- Do some important character stuff before calling in modules:
+local EmbersParticles = ReplicatedStorage.EmbersParticles
+EmbersParticles.Parent = Workspace
+
+local fogWalls = Workspace:WaitForChild("walls")
+while #fogWalls:GetChildren() < 4 do task.wait() end
+print("yos")
+for _, wall in pairs(fogWalls:GetChildren()) do
+    local ParticleEmitter = Instance.new("ParticleEmitter")
+    ParticleEmitter.Color = ColorSequence.new(Color3.fromRGB(68,64,46))
+    ParticleEmitter.LightEmission = 0.8
+    ParticleEmitter.LightInfluence = 0
+    ParticleEmitter.Size = NumberSequence.new(10,20)
+    ParticleEmitter.Texture = "rbxassetid://258128463"
+
+    ParticleEmitter.EmissionDirection = Enum.NormalId.Top
+    ParticleEmitter.Lifetime = NumberRange.new(8,12)
+    ParticleEmitter.Rate = 200
+    ParticleEmitter.Speed = NumberRange.new(2,6)
+    ParticleEmitter.Parent = wall
+end
+
+local Seasonal = require(game.ReplicatedStorage.Shared.Seasonal)
+Seasonal.init()
 
 local ClientVariables = require(game.ReplicatedStorage.Shared.client_modules.ClientVariables)
 require(game.ReplicatedStorage.Shared.client_modules.client_events)
@@ -29,7 +42,7 @@ end)
 local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")
 local camera = workspace.CurrentCamera
 local isHolding = false
-ClientVariables.menuMusic = utilities.createInstance("Sound", {Name = "menuMusic", SoundId = "", Looped = true, Parent = game:GetService("SoundService")})
+ClientVariables.menuMusic = utilities.createInstance("Sound", {Name = "menuMusic", SoundId = "rbxassetid://87753640000210", Looped = true, Parent = game:GetService("SoundService")})
 
 local PlayScreenFocus = game:GetService("Workspace"):WaitForChild("PlayScreenFocus")
 -- Mirosoft Copilot object-circling code cause idk how to do it:
@@ -86,7 +99,6 @@ local function onCharacterAdded(character)
     ClientVariables.Gun_GUI.Cash_Display.Visible = true
     ClientVariables.Gun_GUI.Kills_Display.Visible = true
     ClientVariables.Gun_GUI.round_leaderboard.Visible = false
-
 
     ClientVariables.menuMusic:Play()
 

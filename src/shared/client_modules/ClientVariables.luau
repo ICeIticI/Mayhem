@@ -10,6 +10,8 @@ ClientVariables.gunCursor = "rbxasset://textures/GunCursor.png"
 ClientVariables.reloadingCursor = "rbxasset://textures/GunWaitCursor.png"
 ClientVariables.previousMouseIcon = game:GetService("UserInputService").MouseIcon
 
+ClientVariables.tracks = {} -- dictionary of AnimationTracks the player can play. Their Ids are sent from the server.
+
 ClientVariables.functions = {
     antiTrans = function(part)
         if part and part:IsA("BasePart") and (part.Name == "Left Arm" or part.Name == "Right Arm") then -- checks each of the characters parts to see if any of them is a base part and a left/right arm

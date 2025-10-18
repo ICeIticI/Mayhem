@@ -9,6 +9,11 @@ local RemoteFunction = Instance.new("RemoteFunction")
 RemoteFunction.Name = "RemoteFunction"
 RemoteFunction.Parent = ReplicatedStorage
 
+-- local Seasonal = require(game.ReplicatedStorage.Shared.Seasonal)
+-- Seasonal.init()
+local AnimationService_Server = require(game.ReplicatedStorage.Shared.server_modules.AnimationService_Server)
+AnimationService_Server.init()
+
 local DataManager = require(game.ReplicatedStorage.Shared.server_modules.DataManager)
 local WeaponsMarket = require(game.ReplicatedStorage.Shared.server_modules.WeaponsMarket)
 require(game.ReplicatedStorage.Shared.server_modules.server_events) -- Activate remote event & function listeners on the server-side

@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local FastCast = require(game.ServerScriptService.FastCastRedux) -- require is how we use the data in module scripts
 local partCache = require(game.ServerScriptService.PartCache) -- used to reduce lag. Stores bullets far from the map being played on
 local WeaponsMarket = require(game.ReplicatedStorage.Shared.server_modules.WeaponsMarket)
+local AnimationService_Server = require(game.ReplicatedStorage.Shared.server_modules.AnimationService_Server)
 
 local utilities = require(game.ReplicatedStorage.Shared.utilities)
 
@@ -78,10 +79,10 @@ Gun.gunPresets = {
 		tool = GunToolPresets["AK-15"],
 
 		animations = {
-			Idle = "rbxassetid://122506501631928",
-			Recoil = "rbxassetid://76152974931976",
-			Reload = "rbxassetid://118850012077118",
-			Tact_Reload = "rbxassetid://124526723005619"
+			Idle = {Name = "Idle", AnimationId ="rbxassetid://122506501631928"},
+			Recoil = {Name = "Recoil", AnimationId = "rbxassetid://76152974931976"},
+			Reload = {Name = "Reload", AnimationId = "rbxassetid://118850012077118"},
+			Tact_Reload = {Name = "Tact_Reload", AnimationId = "rbxassetid://124526723005619"}
 		},
 
 		sounds = {
@@ -114,10 +115,10 @@ Gun.gunPresets = {
 		tool = GunToolPresets:WaitForChild("MP5"),
 
 		animations = {
-			Idle = "rbxassetid://75699950963041",
-			Recoil = "rbxassetid://83708487430497",
-			Reload = "rbxassetid://99089822260607",
-			Tact_Reload = "rbxassetid://139503615906576"
+			Idle = {Name = "Idle", AnimationId = "rbxassetid://75699950963041",},
+			Recoil = {Name = "Recoil", AnimationId = "rbxassetid://83708487430497",},
+			Reload = {Name = "Reload", AnimationId = "rbxassetid://99089822260607",},
+			Tact_Reload = {Name = "Tact_Reload", AnimationId = "rbxassetid://139503615906576",}
 		},
 
 		sounds = {
@@ -150,11 +151,11 @@ Gun.gunPresets = {
 		tool = GunToolPresets:WaitForChild("Glock 17"),
 
 		animations = {
-			Idle = "rbxassetid://128097338970357",
-			Recoil = "rbxassetid://85190065349279",
-			No_Ammo_Effect = "rbxassetid://88886520634588",
-			Reload = "rbxassetid://128993757422081",
-			Tact_Reload = "rbxassetid://129645969251542"
+			Idle = {Name = "Idle", AnimationId = "rbxassetid://128097338970357"},
+			Recoil = {Name = "Recoil", AnimationId = "rbxassetid://85190065349279"},
+			No_Ammo_Effect = {Name = "No_Ammo_Effect", AnimationId = "rbxassetid://88886520634588"},
+			Reload = {Name = "Reload", AnimationId = "rbxassetid://128993757422081"},
+			Tact_Reload = {Name = "Tact_Reload", AnimationId = "rbxassetid://129645969251542"}
 		},
 
 		sounds = {
@@ -225,6 +226,7 @@ function Gun.new(character, config)
 	for i, v in pairs(config) do
 		self[i] = v
 	end
+	self.Animations = AnimationService_Server.setupAnimations(self.plr, self.animations)
 
 	self.tool = self.tool:Clone() -- need to clone the config tool so there is not just one
 	self.tool.Name = self.name
@@ -248,7 +250,6 @@ function Gun.new(character, config)
 	-- Folders:
 
 	self.Gun_Sounds = utilities.makeDictionaryFromFolder(self.tool:WaitForChild("Sounds"))
-	self.Animations = utilities.makeAnimationTracksFromAnimations(self.animations, self.shooter:WaitForChild("Humanoid"):WaitForChild("Animator"))
 	self.Values = self.tool:FindFirstChild("Values") or utilities.createInstance("Folder", {Name = "Values", Parent = self.tool})
 
 	-- FastCast:
@@ -344,18 +345,18 @@ function Gun:Fire(ray)
 	self.bulletCaster:Fire(startPosition, direction, 1000, castBehavior) -- like a normal raycast, with the startPosition as the first parameter, and the direction as the second. Except the third parameter is a velocity value. It can be a number, or a Vector3 value
 	self.chamberCaster:Fire(otherStartPosition, otherDirection, 10, chamberBehavior)
 	self.Gun_Sounds.Gunshot:Play()
-	self.Animations.Recoil:Play()
+	self.Animations.Recoil:PlayAnimation()
 	self.bulletFlash.Enabled = true
-	delay(0.1, function()
+	task.delay(0.1, function()
 	self.bulletFlash.Enabled = false
 	end)
-	delay(3, function()
+	task.delay(3, function()
 		for i = 0,300,1 do
 			if self.isHolding ~= true then
 				break			
 			elseif i == 300 then
 				self.bulletSmoke.Enabled = true
-				delay(15,function()
+				task.delay(15,function()
 					self.bulletSmoke.Enabled = false
 				end)
 			end
@@ -366,7 +367,7 @@ function Gun:Fire(ray)
 
 	if self.magCurrent <= 0 then
 		-- some guns, like the Glock, M1 Garand, do something unique on the last round, such as the glock slide not returning, or the M1 Garand clip flying out.
-		if self.Animations.No_Ammo_Effect then self.Animations.No_Ammo_Effect:Play() end
+		if self.Animations.No_Ammo_Effect then self.Animations.No_Ammo_Effect:PlayAnimation() end
 	end
 
 	
@@ -386,7 +387,7 @@ function Gun:Reload()
 			RemoteEvent:FireClient(self.plr, "iconChange", {magCurrent = self.magCurrent, isEquipped = self.isEquipped})
 		end
 
-		self.Animations.Reload:Play()
+		self.Animations.Reload:PlayAnimation()
 		self.Gun_Sounds.Reload:Play()
 		wait(self.reloadDuration * 0.357)
 		self.mag.Transparency = 1
@@ -410,17 +411,17 @@ function Gun:Reload()
 		self.isReloading = false
 		
 	elseif self.magCurrent < self.magCapacity then -- tactical reload for when the mag is only partially empty
-		
 		local tacticalReloadSFX = self.Gun_Sounds.Reload
-		
+	
 		if not tacticalReloadSFX.IsLoaded then
+			print(tacticalReloadSFX, tacticalReloadSFX.Loaded)
 			tacticalReloadSFX.Loaded:Wait()
 		end
-		self.Animations.Tact_Reload:Play()
+		self.Animations.Tact_Reload:PlayAnimation()
 		tacticalReloadSFX.TimePosition = self.tacticalReloadSoundStart -- some guns get the weird startposition treatment due to the nature of a full reload vs tactical.
 		tacticalReloadSFX:Play()
 		
-		delay(self.tacticalReloadDuration, function()
+		task.delay(self.tacticalReloadDuration, function()
 			tacticalReloadSFX:Stop()
 		end)
 		
@@ -453,7 +454,7 @@ function Gun:Reload()
 		self.isReloading = false
 		
 	end
-	if self.Animations.No_Ammo_Effect then self.Animations.No_Ammo_Effect:Stop() end
+	if self.Animations.No_Ammo_Effect then self.Animations.No_Ammo_Effect:StopAnimation() end
 end
 
 function Gun:Sprint()
@@ -494,7 +495,7 @@ function Gun:Equip()
 	self.Gun_Sounds.Equip:Play()
 	self.isEquipped = true
 	RemoteEvent:FireClient(self.plr, "onEquipped", {isEquipped = self.isEquipped, magCurrent = self.magCurrent, magCapacity = self.magCapacity, ammoCurrent = self.ammoCurrent})
-	self.Animations.Idle:Play()
+	self.Animations.Idle:PlayAnimation()
 	params.FilterDescendantsInstances = {self.tool.Parent, bulletsFolder, chamberFolder}
 	self.Gun_Sounds.Equip:Play()
 end
@@ -502,7 +503,7 @@ end
 function Gun:Unequip()
 	self.isEquipped = false
 	RemoteEvent:FireClient(self.plr, "onUnequipped", {isEquipped = self.isEquipped})
-	self.Animations.Idle:Stop()
+	self.Animations.Idle:StopAnimation()
 end
 
 function Gun:Activate()
@@ -556,7 +557,7 @@ function Gun:BulletImpact(cast, result, velocity, bullet)
 		end
 	end
 	
-	delay(1.25, function() -- delay is like wait(), but instead it doesn't yield the entire script, and will be like a wait() on a seperate thread.
+	task.delay(1.25, function() -- delay is like wait(), but instead it doesn't yield the entire script, and will be like a wait() on a seperate thread.
 		bulletCache:ReturnPart(bullet)
 	end)
 end
@@ -574,7 +575,7 @@ end
 function Gun:ChamberImpact(cast, result, velocity, chamber)
 	self.Gun_Sounds.ChamberDrop.Parent = chamber
 	self.Gun_Sounds.ChamberDrop:Play()
-	delay(1.25, function()
+	task.delay(1.25, function()
 		chamberCache:ReturnPart(chamber)
 	end)
 end

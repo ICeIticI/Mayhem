@@ -102,6 +102,20 @@ function Utilities.makeAnimationTracksFromAnimations(animationsTable, animator) 
     return tracksTable
 end
 
+function Utilities.makeAnimationTracksFromIds(idTable, animator)
+    local tracksTable = {}
+    for i, v in pairs(idTable) do
+        local newAnimation = Utilities.createInstance("Animation", {AnimationId = v})
+        tracksTable[i] = animator:LoadAnimation(newAnimation)
+
+        -- "warm up" the AnimationTracks because its delayed on first play:
+        tracksTable[i]:Play()
+        tracksTable[i]:Stop()
+    end
+
+    return tracksTable
+end
+
 --[[
 	Searches the children of a given instance for one that matches all specified attributes.
 	@param parent Instance - The parent to search within.
@@ -153,5 +167,13 @@ function Utilities.getLength(tbl)
 	return count
 end
 
+-- Returns a list of properties from a table of values that share a property
+function Utilities.getPropertyList(tbl, desiredProperty)
+    local propertiesTbl = {}
+    for i, v in pairs(tbl) do
+        propertiesTbl[i] = v[desiredProperty]
+    end
+    return propertiesTbl
+end
 
 return Utilities
