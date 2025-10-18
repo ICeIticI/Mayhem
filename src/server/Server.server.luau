@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
 
 local RemoteEvent = Instance.new("RemoteEvent")
 RemoteEvent.Name = "RemoteEvent"
@@ -9,18 +10,24 @@ local RemoteFunction = Instance.new("RemoteFunction")
 RemoteFunction.Name = "RemoteFunction"
 RemoteFunction.Parent = ReplicatedStorage
 
+local ModuleLoader = require(ReplicatedStorage.Shared.ModuleLoader)
+
+
 -- local Seasonal = require(game.ReplicatedStorage.Shared.Seasonal)
 -- Seasonal.init()
-local AnimationService_Server = require(game.ReplicatedStorage.Shared.server_modules.AnimationService_Server)
+local AnimationService_Server = require(ServerScriptService.Server.server_modules.AnimationService_Server)
 AnimationService_Server.init()
 
-local DataManager = require(game.ReplicatedStorage.Shared.server_modules.DataManager)
-local WeaponsMarket = require(game.ReplicatedStorage.Shared.server_modules.WeaponsMarket)
-require(game.ReplicatedStorage.Shared.server_modules.server_events) -- Activate remote event & function listeners on the server-side
-local utilities = require(game.ReplicatedStorage.Shared.utilities)
-local Gun = require(game.ReplicatedStorage.Shared.server_modules.Gun)
-local Gun_m6dManager = require(game.ReplicatedStorage.Shared.server_modules.Gun_m6dManager)
-local games = require(game.ReplicatedStorage.Shared.server_modules.games)
+local refillAmmo = require(ServerScriptService.Server.server_modules.Modules.refillAmmo)
+refillAmmo.init()
+
+local DataManager = require(ServerScriptService.Server.server_modules.DataManager)
+local WeaponsMarket = require(ServerScriptService.Server.server_modules.WeaponsMarket)
+require(ServerScriptService.Server.server_modules.server_events) -- Activate remote event & function listeners on the server-side
+local utilities = require(ReplicatedStorage.Shared.utilities)
+local Gun = require(ServerScriptService.Server.server_modules.Gun)
+local Gun_m6dManager = require(ServerScriptService.Server.server_modules.Gun_m6dManager)
+local games = require(ServerScriptService.Server.server_modules.games)
 
 local function onCharacterAdded(char)
     char:WaitForChild("HumanoidRootPart").Anchored = true

@@ -1,9 +1,10 @@
 local Players = game:GetService("Players")
+local ServerScriptService = game:GetService("ServerScriptService")
 
 local RemoteEvent = game:GetService("ReplicatedStorage"):WaitForChild("RemoteEvent")
 
 local utilities = require(game.ReplicatedStorage.Shared.utilities)
-local WeaponsMarket = require(game.ReplicatedStorage.Shared.server_modules.WeaponsMarket)
+local WeaponsMarket = require(ServerScriptService.Server.server_modules.WeaponsMarket)
 
 local games = {}
 

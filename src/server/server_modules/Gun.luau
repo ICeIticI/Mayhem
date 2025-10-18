@@ -1,10 +1,11 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
 
-local FastCast = require(game.ServerScriptService.FastCastRedux) -- require is how we use the data in module scripts
-local partCache = require(game.ServerScriptService.PartCache) -- used to reduce lag. Stores bullets far from the map being played on
-local WeaponsMarket = require(game.ReplicatedStorage.Shared.server_modules.WeaponsMarket)
-local AnimationService_Server = require(game.ReplicatedStorage.Shared.server_modules.AnimationService_Server)
+local FastCast = require(ServerScriptService.FastCastRedux) -- require is how we use the data in module scripts
+local partCache = require(ServerScriptService.PartCache) -- used to reduce lag. Stores bullets far from the map being played on
+local WeaponsMarket = require(ServerScriptService.Server.server_modules.WeaponsMarket)
+local AnimationService_Server = require(ServerScriptService.Server.server_modules.AnimationService_Server)
 
 local utilities = require(game.ReplicatedStorage.Shared.utilities)
 

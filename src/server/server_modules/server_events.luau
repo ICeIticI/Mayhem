@@ -2,6 +2,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local MarketplaceService = game:GetService("MarketplaceService")
+local ServerScriptService = game:GetService("ServerScriptService")
 
 -- Events & Functions:
 
@@ -10,10 +11,10 @@ local RemoteFunction = ReplicatedStorage:WaitForChild("RemoteFunction")
 
 -- Modules:
 
-local utilities = require(game.ReplicatedStorage.Shared.utilities)
-local Gun = require(game.ReplicatedStorage.Shared.server_modules.Gun)
-local WeaponsMarket = require(game.ReplicatedStorage.Shared.server_modules.WeaponsMarket)
-local games = require(game.ReplicatedStorage.Shared.server_modules.games)
+local utilities = require(ReplicatedStorage.Shared.utilities)
+local Gun = require(ServerScriptService.Server.server_modules.Gun)
+local WeaponsMarket = require(ServerScriptService.Server.server_modules.WeaponsMarket)
+local games = require(ServerScriptService.Server.server_modules.games)
 
 
 local function receiveServerEvent(plr, protocol, data)

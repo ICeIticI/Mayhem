@@ -1,6 +1,7 @@
 local MarketplaceService = game:GetService("MarketplaceService")
+local StarterPlayer = game:GetService("StarterPlayer")
 
-local ClientVariables = require(game.ReplicatedStorage.Shared.client_modules.ClientVariables)
+local ClientVariables = require(StarterPlayer.StarterPlayerScripts.Client.client_modules.ClientVariables)
 local utilities = require(game.ReplicatedStorage.Shared.utilities)
 
 local RemoteFunction = game.ReplicatedStorage:WaitForChild("RemoteFunction")

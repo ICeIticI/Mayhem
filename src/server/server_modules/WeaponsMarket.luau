@@ -1,6 +1,7 @@
 local RemoteEvent = game:GetService("ReplicatedStorage"):WaitForChild("RemoteEvent")
+local ServerScriptService = game:GetService("ServerScriptService")
 
-local DataManager = require(game.ReplicatedStorage.Shared.server_modules.DataManager)
+local DataManager = require(ServerScriptService.Server.server_modules.DataManager)
 local utilities = require(game.ReplicatedStorage.Shared.utilities)
 
 local WeaponsMarket = {}

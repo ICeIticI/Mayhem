@@ -1,4 +1,5 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterPlayer = game:GetService("StarterPlayer")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -27,16 +28,16 @@ for _, wall in pairs(fogWalls:GetChildren()) do
     ParticleEmitter.Parent = wall
 end
 
-local Seasonal = require(game.ReplicatedStorage.Shared.Seasonal)
+local Seasonal = require(ReplicatedStorage.Shared.Seasonal)
 Seasonal.init()
 
-local ClientVariables = require(game.ReplicatedStorage.Shared.client_modules.ClientVariables)
-require(game.ReplicatedStorage.Shared.client_modules.client_events)
-local ShopManager = require(game.ReplicatedStorage.Shared.client_modules.shopManager)
-local utilities = require(game.ReplicatedStorage.Shared.utilities)
+local ClientVariables = require(StarterPlayer.StarterPlayerScripts.Client.client_modules.ClientVariables)
+require(StarterPlayer.StarterPlayerScripts.Client.client_modules.client_events)
+local ShopManager = require(StarterPlayer.StarterPlayerScripts.Client.client_modules.shopManager)
+local utilities = require(ReplicatedStorage.Shared.utilities)
 local move_arms
 task.spawn(function()
-    move_arms = require(game.ReplicatedStorage.Shared.client_modules.move_arms)
+    move_arms = require(StarterPlayer.StarterPlayerScripts.Client.client_modules.move_arms)
 end)
 
 local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")

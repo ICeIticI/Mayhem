@@ -1,6 +1,7 @@
 local RunService = game:GetService("RunService")
+local StarterPlayer = game:GetService("StarterPlayer")
 
-local ClientVariables = require(game.ReplicatedStorage.Shared.client_modules.ClientVariables)
+local ClientVariables = require(StarterPlayer.StarterPlayerScripts.Client.client_modules.ClientVariables)
 
 local move_arms = {}
 

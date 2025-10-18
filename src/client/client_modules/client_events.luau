@@ -1,10 +1,11 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
+local StarterPlayer = game:GetService("StarterPlayer")
 
-local ClientVariables = require(game.ReplicatedStorage.Shared.client_modules.ClientVariables)
+local ClientVariables = require(StarterPlayer.StarterPlayerScripts.Client.client_modules.ClientVariables)
 local utilities = require(game.ReplicatedStorage.Shared.utilities)
-local shopManager = require(game.ReplicatedStorage.Shared.client_modules.shopManager)
+local shopManager = require(StarterPlayer.StarterPlayerScripts.Client.client_modules.shopManager)
 
 local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")
 local RemoteFunction = ReplicatedStorage:WaitForChild("RemoteFunction")
