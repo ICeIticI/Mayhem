@@ -46,12 +46,7 @@ local function receiveServerEvent(plr, protocol, data)
     if protocol == "inputStarted" then
 
         if inputType == "ShootInputs" then
-            if plrGun:Fire(data.ray) == true then
-                 -- successfully shot
-                 plrGun.shootDebounce.Value = true
-                 task.wait(plrGun.fireRate)
-                 plrGun.shootDebounce.Value = false
-            end
+            plrGun:Fire(data.ray)
         elseif inputType == "ReloadInputs" then
             plrGun:Reload()
         elseif inputType == "SprintInputs" then

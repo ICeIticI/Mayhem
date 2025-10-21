@@ -68,7 +68,7 @@ local function initiatePurchaseButton(itemToDisplay, isLocked)
     button.instance.Visible = true
 
     button.item = itemToDisplay
-    button.item:PivotTo(CFrame.new(0.1, 3.5, 6.5))
+    button.item:PivotTo(CFrame.new(0, 3.5, 6.5))
 
     -- Methods:
 
