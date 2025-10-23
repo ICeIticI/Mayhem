@@ -29,8 +29,6 @@ function ModuleLoader.init()
             ModuleLoader[v.Name] = require(v)
         end
     end
-
-    print(ModuleLoader)
 end
 
 return ModuleLoader

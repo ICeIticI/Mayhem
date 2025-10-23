@@ -47,6 +47,14 @@ function Utilities.makeDictionaryFromFolder(folder)
     return newDictionary
 end
 
+function Utilities.makeTableFromDictionaryValues(dictionary)
+    local tbl = {}
+    for _, v in pairs(dictionary) do
+        table.insert(tbl, v)
+    end
+    return tbl
+end
+
 function Utilities.multiplyTableValuesTogether(tbl)
     local newProduct = 1 -- will be multiplied, can be less or more than 1
     for _, value in pairs(tbl) do
@@ -71,6 +79,26 @@ function Utilities.createInstance(instanceName: string, properties : dictionary)
     end
 
     return newInstance
+end
+
+function Utilities.filterCharacterObjects(char, objectNamesTable) -- disables character objects that have a matching name to the objectNamesTable indexes, turns off CanTouch, CanQuery, etc.
+    
+    -- Ensure character is loaded before we filter out accessories:
+    char:WaitForChild("Humanoid")
+    char:WaitForChild("HumanoidRootPart")
+
+    for _, child in pairs(char:GetDescendants()) do
+        print(child.Name, child.ClassName)
+        if objectNamesTable[child.ClassName] then -- its one of our filters. Disable!
+            local accessoryPart = child:FindFirstChildWhichIsA("Part")
+            accessoryPart.CanCollide = false
+            accessoryPart.CanTouch = false
+            accessoryPart.CanQuery = false
+            accessoryPart.EnableFluidForces = false
+            warn(child)
+        end
+    end
+    print("We runnn hahaha")
 end
 
 function Utilities.makeAnimationTracksFromAnimations(animationsTable, animator) -- animationsTable accepts both Animation instances and AnimationIds
@@ -150,6 +178,17 @@ function Utilities.FindChildByNameWhichIsA(parent : Instance, name : string, cla
         end
     end
     -- return warn("No child of " .. parent.Name .. " found with the name " .. name .. " that is a " .. className)
+end
+
+function Utilities.getPlayersOfTeam(team)
+    local teamMembers = {}
+    for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+        if player.Team == team then
+            table.insert(teamMembers, player)
+        end
+    end
+
+    return teamMembers
 end
 
 function Utilities.HasProperty(obj: Instance, prop: string): boolean

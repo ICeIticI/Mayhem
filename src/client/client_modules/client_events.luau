@@ -79,9 +79,16 @@ local function receiveClientEvent(protocol, data)
 
 	elseif protocol == "CountdownChange" then
 
-		if data.winnerId then
+		if data.winnerIdsTable and #data.winnerIdsTable > 0 then
+
 			-- the game ended and we announce winner
-			ClientVariables.Gun_GUI.Round_Timer.Text = Players:GetPlayerByUserId(data.winnerId).Name .. " has won the round!"
+			if #data.winnerIdsTable > 1 then
+				-- multiple winners. Announce team name
+				ClientVariables.Gun_GUI.Round_Timer.Text = Players:GetPlayerByUserId(data.winnerIdsTable[1]).Team.Name .. " Team has won the round!" -- all indexes should have the same team, so no matter the index we pull.
+			else
+				-- One winner. Announce player name
+				ClientVariables.Gun_GUI.Round_Timer.Text = Players:GetPlayerByUserId(data.winnerIdsTable	[1]).Name .. " has won the round!"
+			end
 		else
 			ClientVariables.Gun_GUI.Round_Timer.Text = data.gamePeriod .. " " .. data.Value
 			ClientVariables.functions.updateLeaderboard(ClientVariables.functions.getSortedPlayers(data.playerScores))

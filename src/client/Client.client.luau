@@ -12,7 +12,7 @@ EmbersParticles.Parent = Workspace
 
 local fogWalls = Workspace:WaitForChild("walls")
 while #fogWalls:GetChildren() < 4 do task.wait() end
-print("yos")
+
 for _, wall in pairs(fogWalls:GetChildren()) do
     local ParticleEmitter = Instance.new("ParticleEmitter")
     ParticleEmitter.Color = ColorSequence.new(Color3.fromRGB(68,64,46))
@@ -67,7 +67,6 @@ end)
 local function onChildChanged(child)
     if child:IsA("Tool") and child:GetAttribute("Gun") then
         if child.Parent == ClientVariables.player.Backpack or child.Parent == ClientVariables.player.Character then
-            warn("Equip")
             -- equipped weapon
             ClientVariables.gunTool = child
             ShopManager.buttons[child.Name]:SwapParents(true)

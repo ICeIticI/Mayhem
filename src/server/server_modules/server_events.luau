@@ -25,6 +25,10 @@ local function receiveServerEvent(plr, protocol, data)
         if game.PlaceId > 0 then -- we dont wanna force lock in studio for testing stuff
             plr.CameraMode = Enum.CameraMode.LockFirstPerson
         end
+
+        print("Hey")
+        -- make sure bullets cant collide with accessories
+        utilities.filterCharacterObjects(plr.Character, {["Accessory"] = true})
         
         plr.Character.HumanoidRootPart.Anchored = false
         plr.IsLoaded.Value = true
@@ -86,7 +90,6 @@ local function receiveServerInvoke(plr, protocol, data)
             if ownedWeapons[data.name] and ownedWeapons[data.name].equipped then -- The weapon is equipped already
                 
                 if plrGun and plrGun.name then
-                    print("Unequipping weapon", plrGun.name)
                     WeaponsMarket:AddWeaponToWeaponsAccount(plr, plrGun.name, false)
                     plrGun:Remove()
                 end
@@ -95,14 +98,12 @@ local function receiveServerInvoke(plr, protocol, data)
 
                 -- For now we only allow one weapon to be equipped, which is intended to be changed later:
                 if plrGun and plrGun.name then -- unequips current weapon:
-                    print("Unequipping CURRENT weapon", plrGun.name)
                     WeaponsMarket:AddWeaponToWeaponsAccount(plr, plrGun.name, false)
                     plrGun:Remove()
                 end
             
                 plrGun = Gun.new(plr.Character, config)
                 plrGun.tool.Parent = plr.Backpack
-                print("Equipping unequipped weapon", data.name)
                 WeaponsMarket:AddWeaponToWeaponsAccount(plr, plrGun.name, true)
 
             else -- The weapon isn't owned yet

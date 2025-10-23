@@ -53,7 +53,6 @@ local function getPriceOfProductInRobux(productId)
     if success and productInfo then
         return productInfo.PriceInRobux
     else
-        warn("Failed to get price of robux with the given id: " .. tostring(productId))
         return 0
     end
 end
@@ -90,12 +89,10 @@ local function initiatePurchaseButton(itemToDisplay, isLocked)
             -- change to equipped section:
             self.instance.Size = UI_EQUIPPED_SIZE
             self.instance.Parent = equippedFrame
-            print(true)
         else
             -- change to unequipped section:
             self.instance.Size = UI_SELECTION_SIZE
             self.instance.Parent = selectionFrame
-            print(false)
         end
         return
     end
@@ -158,7 +155,6 @@ task.spawn(function()
             else
                 isLocked = true
             end
-            print(weapon.Name, isLocked)
             shopManager.buttons[weapon.Name] = initiatePurchaseButton(weapon, isLocked)
         end
     end

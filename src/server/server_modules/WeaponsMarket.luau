@@ -69,13 +69,11 @@ function WeaponsMarket:AddWeaponToWeaponsAccount(plr, weaponName, equipped)
     if not equipped then
         utilities.createInstance("StringValue", {Name = weaponName, Parent = plr.unequippedWeapons})
     else
-        print(weaponName)
         if plr.unequippedWeapons:FindFirstChild(weaponName) then
             plr.unequippedWeapons[weaponName]:Destroy()
         end
     end
 
-    print(weaponName, gunsAccounts[plr.UserId], gunsAccounts[plr.UserId][weaponName])
     gunsAccounts[plr.UserId][weaponName] = {name = weaponName, equipped = equipped}
     DataManager:SetData(plr, "OwnedWeapons", gunsAccounts[plr.UserId])
 end

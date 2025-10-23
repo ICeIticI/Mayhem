@@ -16,7 +16,6 @@ function Seasonal.init() -- singleton - runs once.
     local currentMonth = tonumber(os.date("%m")) -- returns what month number it is (ex. 10 for october).
 
     if currentMonth == 10 then -- Prepare halloween stuff
-        warn(currentMonth, "ITS HALLOWEEEENNNNNN")
 
         ReplicatedStorage:WaitForChild("JackOLanterns").Parent = Workspace
 

@@ -50,7 +50,6 @@ local function recoverStamina(gun)
 		
 		if gun.isSprintPressed then break end
 		task.wait(0.1)
-		print(gun.currentSprintStamina)
 	end
 end
 
@@ -454,7 +453,7 @@ end
 
 -- raycast params being added to FastCast params
 local params = RaycastParams.new() -- we can even add the standard Raycast params to FastCasting
-params.FilterType = Enum.RaycastFilterType.Exclude
+params.FilterType = Enum.RaycastFilterType.Include
 params.IgnoreWater = true -- "because it is a gun; it should be able to go through water" - B Ricey
 
 -- FastCast params
@@ -476,7 +475,6 @@ chamberBehavior.CosmeticBulletProvider = chamberCache
 Gun.activeGuns = {}
 
 function Gun.new(character, config)
-	print(config)
 	local self = setmetatable({}, Gun)
 
 	self.shooter = character
@@ -682,12 +680,10 @@ function Gun:Sprint()
 				if self.currentSprintStamina.Value >= self.sprintStamina.Value then continue end
 
 				self.currentSprintStamina.Value += 1
-				print(self.currentSprintStamina.Value)
 				continue
 			else
 				self.currentSprintStamina.Value -= 1
 				if not self.isSprintPressed then break end
-				print(self.currentSprintStamina.Value)
 			end
 		end
 		self.shooter.Humanoid.WalkSpeed = self.ogWalkSpeed

@@ -2,6 +2,8 @@ local Players = game:GetService("Players")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 local RemoteEvent = game:GetService("ReplicatedStorage"):WaitForChild("RemoteEvent")
+local ServerStorage = game:GetService("ServerStorage")
+local Teams = game:GetService("Teams")
 
 local utilities = require(game.ReplicatedStorage.Shared.utilities)
 local WeaponsMarket = require(ServerScriptService.Server.server_modules.WeaponsMarket)
@@ -10,12 +12,12 @@ local games = {}
 
 local currentRoundPlayers = {}
 local playerScores = {}
-local winnerId = nil -- will be the id of the game winner to announce to each client
+local winnerIdsTable = {} -- will be the id of the game winner to announce to each client
 
 local gamePeriod = "Ongoing"
 local countdown = utilities.createInstance("IntValue", {Name = "Countdown", Value = 0})
 countdown:GetPropertyChangedSignal("Value"):Connect(function()
-    RemoteEvent:FireAllClients("CountdownChange", {gamePeriod = gamePeriod, Value = countdown.Value, playerScores = playerScores, winnerId = winnerId})
+    RemoteEvent:FireAllClients("CountdownChange", {gamePeriod = gamePeriod, Value = countdown.Value, playerScores = playerScores, winnerIdsTable = winnerIdsTable})
 end)
 
 
@@ -54,6 +56,7 @@ local gamemodes = {
     {
         gamemode_name = "Free For All",
         timer = 120,
+        roundReward = 200,
         run = function() -- Determines how scoring will work for FFA
             for _, player in pairs(currentRoundPlayers) do
 
@@ -67,11 +70,77 @@ local gamemodes = {
                 local timerTrackerConnect
                 timerTrackerConnect = countdown:GetPropertyChangedSignal("Value"):Connect(function()
                     if countdown.Value == 0 then
+                        
                         killsTrackerConnect:Disconnect()
                         timerTrackerConnect:Disconnect()
+
+                        local max = 0 -- starts the comparison with the smallest possible number.
+                        for plrId, score in pairs(playerScores) do
+                            if score > max then
+                                max = score
+                                table.clear(winnerIdsTable) -- clear old winner
+                                table.insert(winnerIdsTable, plrId) -- add new winner
+                            end
+                        end
                     end
                 end)
             end
+        end
+    },
+
+    {
+        gamemode_name = "The Beast",
+        timer = 120,
+        roundReward = 50,
+        run = function()
+            
+            -- prepare teams:
+            local Beast_Team = ServerStorage.TeamsStorage:WaitForChild("The Beast")
+            local Neutral_Team = ServerStorage.TeamsStorage:WaitForChild("Neutral")
+            Beast_Team.Parent = Teams
+            Neutral_Team.Parent = Teams
+
+            -- because we wannt randomly pick a player, we cant use a dictionary to choose a random index, so we turn it to a table.
+            local currentRoundPlayers_TableVersion = utilities.makeTableFromDictionaryValues(currentRoundPlayers)
+            local randomBeastIndex = math.random(1, #currentRoundPlayers_TableVersion)
+            print(randomBeastIndex, currentRoundPlayers_TableVersion)
+
+            local chosenBeast
+            local beastHealthMultiplier = 1 -- every player that is in the round will multiply the beast health
+            for i, player in pairs(currentRoundPlayers_TableVersion) do
+
+                if i == randomBeastIndex then
+                    -- this is our chosen beast
+                    chosenBeast = player
+                    player.Team = Beast_Team
+                    chosenBeast.Character:WaitForChild("Health"):Destroy() -- take away healing script
+                else
+                    player.Team = Neutral_Team
+                    beastHealthMultiplier *= 1.1
+                end
+                    chosenBeast.Character.Humanoid.MaxHealth *= 10 * beastHealthMultiplier
+                    chosenBeast.Character.Humanoid.Health = chosenBeast.Character.Humanoid.MaxHealth
+
+            end
+
+            local diedConnect
+            diedConnect = chosenBeast.Character.Humanoid.Died:Connect(function()
+                for _, plr in pairs(currentRoundPlayers_TableVersion) do
+                    if plr ~= chosenBeast then
+                        table.insert(winnerIdsTable, plr.UserId)
+                    end
+                end
+                countdown.Value = 0
+            end)
+
+            -- disconnect tracking kills after the round ends:
+            local timerTrackerConnect
+            timerTrackerConnect = countdown:GetPropertyChangedSignal("Value"):Connect(function()
+                if countdown.Value == 0 and gamePeriod == "Ongoing" then
+                    diedConnect:Disconnect()
+                    timerTrackerConnect:Disconnect()
+                end
+            end)
         end
     },
 
@@ -81,6 +150,7 @@ function games.run()
 
     -- Pick gamemode:
     local chosenGamemode = gamemodes[math.random(1, #gamemodes)]
+    chosenGamemode = gamemodes[2] -- ! DELETE WHEN DONE TESTING !
 
 
     -- Clear old-round data for the new:
@@ -118,6 +188,8 @@ function games.run()
         end
     end
 
+    -- Ready the gamemode:
+    chosenGamemode.run()
 
     -- Countdown until match starts:
     gamePeriod = "Countdown"
@@ -129,7 +201,6 @@ function games.run()
 
     -- Let the games begin!
     warn("Let the games begin!")
-    chosenGamemode.run()
     for _, player in pairs(currentRoundPlayers) do
         if not player.IsLoaded then continue end
         player.Character.HumanoidRootPart.Anchored = false
@@ -142,6 +213,7 @@ function games.run()
     for i = countdown.Value, 0, -1 do
         countdown.Value = i
         task.wait(1)
+        if countdown.Value <= 0 then break end -- if I manually set it to 0 cause round ended early, such as the Beast getting killed.
     end
 
     -- Match ended! Freeze players, count scores, declare winner!
@@ -152,26 +224,25 @@ function games.run()
         end
     end
 
-    local max = 0 -- starts the comparison with the smallest possible number.
-    
-    for plrId, score in pairs(playerScores) do
-        if score > max then
-            max = score
-            winnerId = plrId
+    if #winnerIdsTable > 0 then
+        for _, winnerId in pairs(winnerIdsTable) do
+            local winner = Players:GetPlayerByUserId(winnerId)
+            warn(winner)
+            WeaponsMarket:AwardCash(winner, chosenGamemode.roundReward)
         end
-    end
-
-    if winnerId then
-        local winner = Players:GetPlayerByUserId(winnerId)
-        warn(winner)
-        WeaponsMarket:AwardCash(winner, 200)
     end
     
     for i = 5, 0, -1 do
         countdown.Value = i
         task.wait(1)
     end
-    winnerId = nil
+
+    -- returning teams
+    for _, team in pairs(Teams:GetChildren()) do
+        team.Parent = ServerStorage.TeamsStorage
+    end
+
+    winnerIdsTable = {}
 end
 
 return games
