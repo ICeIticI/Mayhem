@@ -102,7 +102,6 @@ local function onCharacterAdded(character)
 
     ClientVariables.menuMusic:Play()
 
-
     local onChildAddedConnect, onChildRemovedConnect
     local parent = ClientVariables.player.Backpack
     onChildAddedConnect = parent.ChildAdded:Connect(function(child)

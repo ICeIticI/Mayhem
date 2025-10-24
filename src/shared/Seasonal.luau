@@ -29,7 +29,7 @@ function Seasonal.init() -- singleton - runs once.
         Atmosphere.Glare = 0.2
         Atmosphere.Haze = 10
 
-        Lighting.Brightness = 5
+        Lighting.Brightness = 6
         Lighting.TimeOfDay = "21:00:00"
 
         local Workspace = game:GetService("Workspace")

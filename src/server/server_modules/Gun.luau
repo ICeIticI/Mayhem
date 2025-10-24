@@ -98,7 +98,7 @@ Gun.gunPresets = {
 		fullAuto = true,
 		damage = 34,
 
-		sprintSpeedMultiplier = 1.5, -- May change in the future, especially if attachments cause weigh-down, but not our concern as of now.
+		sprintSpeedMultiplier = 1.4, -- May change in the future, especially if attachments cause weigh-down, but not our concern as of now.
 		animationSpeedMultiplier = 1, -- Higher numbers increase animation speed, such as for reloading
 		reloadDuration = 2.3,
 		tacticalReloadDuration = 2.3,
@@ -184,7 +184,7 @@ Gun.gunPresets = {
 		fullAuto = true,
 		damage = 27,
 
-		sprintSpeedMultiplier = 1.7, -- May change in the future, especially if attachments cause weigh-down, but not our concern as of now.
+		sprintSpeedMultiplier = 1.5, -- May change in the future, especially if attachments cause weigh-down, but not our concern as of now.
 		animationSpeedMultiplier = 1,
 		reloadDuration = 3,
 		tacticalReloadDuration = 2,
@@ -271,7 +271,7 @@ Gun.gunPresets = {
 		fullAuto = false,
 		damage = 40,
 
-		sprintSpeedMultiplier = 2, -- May change in the future, especially if attachments cause weigh-down, but not our concern as of now.
+		sprintSpeedMultiplier = 1.6, -- May change in the future, especially if attachments cause weigh-down, but not our concern as of now.
 		animationSpeedMultiplier = 1,
 		reloadDuration = 2.2,
 		tacticalReloadDuration = 1.3,
@@ -361,7 +361,7 @@ Gun.gunPresets = {
 		fullAuto = false,
 		damage = 80,
 
-		sprintSpeedMultiplier = 1.2, -- May change in the future, especially if attachments cause weigh-down, but not our concern as of now.
+		sprintSpeedMultiplier = 1.35, -- May change in the future, especially if attachments cause weigh-down, but not our concern as of now.
 		animationSpeedMultiplier = 1,
 		reloadDuration = 4,
 		tacticalReloadDuration = 3, -- for the Kar98k, this is a per-bullet reload duration.
@@ -451,27 +451,6 @@ for i, preset in pairs(Gun.gunPresets) do
 	Gun.presetProductIds[preset.productId] = i
 end
 
--- raycast params being added to FastCast params
-local params = RaycastParams.new() -- we can even add the standard Raycast params to FastCasting
-params.FilterType = Enum.RaycastFilterType.Include
-params.IgnoreWater = true -- "because it is a gun; it should be able to go through water" - B Ricey
-
--- FastCast params
-local castBehavior = FastCast.newBehavior() -- very similar to RaycastParams. This allows us to configure behaviors of our FastCast
-castBehavior.RaycastParams = params -- basically adding the FastCast parmas to the added Raycast Params
-castBehavior.Acceleration = Vector3.new(0, -workspace.Gravity, 0) -- self explanatory, but the .Acceleration property allows us to change the acceleration of the bullets. the second parameter, which we subtracted the bullets acceleration by gravity, would cause the bullet to drop overtime. In other words, it "pulls" our bullet down.
-castBehavior.AutoIgnoreContainer = false -- this is redundant because in the onEquipped() function, we are already ignoring the player when they equip the gun
-castBehavior.CosmeticBulletContainer = bulletsFolder -- the .CosmeticBulletContainer is what FastCast will use to referance where the gun's bullets will be stored
---castBehavior.CosmeticBulletTemplate = bulletTemplate -- we no longer need this after the cache has been added
-castBehavior.CosmeticBulletProvider = bulletCache -- Instead of the CosmeticBulletTemplate (which would of duplicate the bullet), we would have a Provider, which has bullets pre-loaded and recycled
-
-local chamberBehavior = FastCast.newBehavior() -- for bullet chamber
-chamberBehavior.RaycastParams = params
-chamberBehavior.Acceleration = Vector3.new(0, -workspace.Gravity, 0)
-chamberBehavior.AutoIgnoreContainer = false
-chamberBehavior.CosmeticBulletContainer = chamberFolder
-chamberBehavior.CosmeticBulletProvider = chamberCache
-
 Gun.activeGuns = {}
 
 function Gun.new(character, config)
@@ -527,6 +506,27 @@ function Gun.new(character, config)
 	self.sprintStamina = utilities.createInstance("NumberValue", {Name = "SprintStamina", Value = 100, Parent = self.Values})
 	self.currentSprintStamina = utilities.createInstance("NumberValue", {Name = "CurrentSprintStamina", Value = self.sprintStamina.Value, Parent = self.Values})
 	
+	-- raycast params being added to FastCast params
+	self.params = RaycastParams.new() -- we can even add the standard Raycast params to FastCasting
+	self.params.FilterType = Enum.RaycastFilterType.Exclude
+	self.params.IgnoreWater = true -- "because it is a gun; it should be able to go through water" - B Ricey
+
+	-- FastCast params
+	self.castBehavior = FastCast.newBehavior() -- very similar to RaycastParams. This allows us to configure behaviors of our FastCast
+	self.castBehavior.RaycastParams = self.params -- basically adding the FastCast parmas to the added Raycast Params
+	self.castBehavior.Acceleration = Vector3.new(0, -workspace.Gravity, 0) -- self explanatory, but the .Acceleration property allows us to change the acceleration of the bullets. the second parameter, which we subtracted the bullets acceleration by gravity, would cause the bullet to drop overtime. In other words, it "pulls" our bullet down.
+	self.castBehavior.AutoIgnoreContainer = false -- this is redundant because in the onEquipped() function, we are already ignoring the player when they equip the gun
+	self.castBehavior.CosmeticBulletContainer = bulletsFolder -- the .CosmeticBulletContainer is what FastCast will use to referance where the gun's bullets will be stored
+	--castBehavior.CosmeticBulletTemplate = bulletTemplate -- we no longer need this after the cache has been added
+	self.castBehavior.CosmeticBulletProvider = bulletCache -- Instead of the CosmeticBulletTemplate (which would of duplicate the bullet), we would have a Provider, which has bullets pre-loaded and recycled
+
+	self.chamberBehavior = FastCast.newBehavior() -- for bullet chamber
+	self.chamberBehavior.RaycastParams = self.params
+	self.chamberBehavior.Acceleration = Vector3.new(0, -workspace.Gravity, 0)
+	self.chamberBehavior.AutoIgnoreContainer = false
+	self.chamberBehavior.CosmeticBulletContainer = chamberFolder
+	self.chamberBehavior.CosmeticBulletProvider = chamberCache
+
 
 	-- Connections:
 
@@ -560,7 +560,7 @@ function Gun.new(character, config)
 		end),
 		self.currentSprintStamina:GetPropertyChangedSignal("Value"):Connect(function()
 			onCurrentSprintStaminaChanged(self.plr, self.currentSprintStamina.Value, self.sprintStamina.Value)
-		end)
+		end),
 
 	}
 
@@ -604,7 +604,7 @@ function Gun:Fire(ray)
 	self.magCurrent = self.magCurrent - 1
 
 	task.spawn(function()
-		self.fireAction(self, castBehavior, chamberBehavior, startPosition, direction, otherStartPosition, otherDirection)
+		self.fireAction(self, self.castBehavior, self.chamberBehavior, startPosition, direction, otherStartPosition, otherDirection)
 	end)
 
 	if self.magCurrent <= 0 then
@@ -667,14 +667,19 @@ function Gun:Reload()
 	if self.Animations.No_Ammo_Effect then self.Animations.No_Ammo_Effect:StopAnimation() end
 end
 
+function Gun:SetAmmoToDefault()
+	self.magCurrent = self.magCapacity -- how many bullets are currently in the clip
+	self.ammoCurrent = self.ammoMax / 2 -- how many bullets the shooter is holding not in the clip
+end
+
 function Gun:Sprint()
-	if not self.isSprintPressed then
+	if not self.isSprintPressed and self.currentSprintStamina.Value > 0 then
 		self.isSprintPressed = true
 		self.shooter.Humanoid.WalkSpeed = self.ogWalkSpeed * self.sprintSpeedMultiplier
 		-- RemoteFunction:InvokeClient(self.plr, "waitForSprintPressToEnd")
 		
 		-- Drain:
-		while self.isSprintPressed do
+		while self.isSprintPressed and self.currentSprintStamina.Value > 0 do
 			task.wait(0.1)
 			if self.shooter.Humanoid.MoveDirection.Magnitude == 0 then 
 				if self.currentSprintStamina.Value >= self.sprintStamina.Value then continue end
@@ -694,6 +699,14 @@ function Gun:Sprint()
 	end
 end
 
+-- function Gun:OnJump(active) -- Runs when the shooter jumps
+-- 	if active then
+-- 		self.currentSprintStamina.Value -= 10
+-- 	elseif not self.isHolding then
+-- 		recoverStamina(self)
+-- 	end
+-- end
+
 function Gun:Equip()
 	if self.plr and not self.plr.IsLoaded.Value then
 		self.tool.Parent = self.plr.Backpack
@@ -704,7 +717,7 @@ function Gun:Equip()
 	self.isEquipped = true
 	RemoteEvent:FireClient(self.plr, "onEquipped", {isEquipped = self.isEquipped, magCurrent = self.magCurrent, magCapacity = self.magCapacity, ammoCurrent = self.ammoCurrent})
 	self.Animations.Idle:PlayAnimation()
-	params.FilterDescendantsInstances = {self.tool.Parent, bulletsFolder, chamberFolder}
+	self.params.FilterDescendantsInstances = {self.tool.Parent, bulletsFolder, chamberFolder}
 	self.Gun_Sounds.Equip:Play()
 end
 

@@ -7,6 +7,7 @@ local Teams = game:GetService("Teams")
 
 local utilities = require(game.ReplicatedStorage.Shared.utilities)
 local WeaponsMarket = require(ServerScriptService.Server.server_modules.WeaponsMarket)
+local Gun = require(game:GetService("ServerScriptService").Server.server_modules.Gun)
 
 local games = {}
 
@@ -90,7 +91,7 @@ local gamemodes = {
 
     {
         gamemode_name = "The Beast",
-        timer = 120,
+        timer = 600,
         roundReward = 50,
         run = function()
             
@@ -109,19 +110,23 @@ local gamemodes = {
             local beastHealthMultiplier = 1 -- every player that is in the round will multiply the beast health
             for i, player in pairs(currentRoundPlayers_TableVersion) do
 
+                print(randomBeastIndex, i)
                 if i == randomBeastIndex then
                     -- this is our chosen beast
                     chosenBeast = player
                     player.Team = Beast_Team
-                    chosenBeast.Character:WaitForChild("Health"):Destroy() -- take away healing script
+
+                    if chosenBeast.Character:FindFirstChild("Health") then
+                        chosenBeast.Character:WaitForChild("Health"):Destroy() -- take away healing script
+                    end
                 else
                     player.Team = Neutral_Team
                     beastHealthMultiplier *= 1.1
                 end
-                    chosenBeast.Character.Humanoid.MaxHealth *= 10 * beastHealthMultiplier
-                    chosenBeast.Character.Humanoid.Health = chosenBeast.Character.Humanoid.MaxHealth
-
             end
+            chosenBeast.Character.Humanoid.MaxHealth *= 8 * beastHealthMultiplier
+            chosenBeast.Character.Humanoid.Health = chosenBeast.Character.Humanoid.MaxHealth
+            print(chosenBeast.Character.Humanoid.MaxHealth, beastHealthMultiplier)
 
             local diedConnect
             diedConnect = chosenBeast.Character.Humanoid.Died:Connect(function()
@@ -190,6 +195,10 @@ function games.run()
 
     -- Ready the gamemode:
     chosenGamemode.run()
+
+    for _, weapon in pairs(Gun.activeGuns) do
+        weapon:SetAmmoToDefault()
+    end
 
     -- Countdown until match starts:
     gamePeriod = "Countdown"

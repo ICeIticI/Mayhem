@@ -136,7 +136,13 @@ end
     end)
 
     button.item.Parent = button.instance.ViewportFrame
-    button.instance.Parent = selectionFrame
+    
+    -- if the gun is already equipped, put it in equipped section. If not, then unequipped section:
+    if (ClientVariables.gunTool and ClientVariables.gunTool.Name == button.item.Name and (utilities.FindChildByNameWhichIsA(ClientVariables.player.Backpack, ClientVariables.gunTool.Name, "Tool"))) then
+        button:SwapParents(true)
+    else
+        button:SwapParents(false)
+    end
     
     return button
 end

@@ -25,8 +25,14 @@ function WeaponsMarket:InitiateAccounts(plr)
 
     killsAccounts[plr.UserId].Value = DataManager:GetData(plr, "Kills").Value or 0
     cashAccounts[plr.UserId].Value = DataManager:GetData(plr, "Cash").Value or 0
-    gunsAccounts[plr.UserId] = DataManager:GetData(plr, "OwnedWeapons") or {}
+    gunsAccounts[plr.UserId] = DataManager:GetData(plr, "OwnedWeapons")
 
+    -- new players should start with default weapon, the glock
+    if #gunsAccounts[plr.UserId] == 0 then
+        gunsAccounts[plr.UserId] = {["Glock 17"] = {["name"] = "Glock 17", ["equipped"] = true}}
+    end
+
+    print(gunsAccounts)
 end
 
 function WeaponsMarket:AwardKill(plr, amount)
@@ -75,6 +81,7 @@ function WeaponsMarket:AddWeaponToWeaponsAccount(plr, weaponName, equipped)
     end
 
     gunsAccounts[plr.UserId][weaponName] = {name = weaponName, equipped = equipped}
+    print(gunsAccounts)
     DataManager:SetData(plr, "OwnedWeapons", gunsAccounts[plr.UserId])
 end
 

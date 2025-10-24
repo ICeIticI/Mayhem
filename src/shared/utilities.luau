@@ -88,14 +88,13 @@ function Utilities.filterCharacterObjects(char, objectNamesTable) -- disables ch
     char:WaitForChild("HumanoidRootPart")
 
     for _, child in pairs(char:GetDescendants()) do
-        print(child.Name, child.ClassName)
         if objectNamesTable[child.ClassName] then -- its one of our filters. Disable!
+            print(child.Name, child.ClassName)
             local accessoryPart = child:FindFirstChildWhichIsA("Part")
             accessoryPart.CanCollide = false
             accessoryPart.CanTouch = false
             accessoryPart.CanQuery = false
             accessoryPart.EnableFluidForces = false
-            warn(child)
         end
     end
     print("We runnn hahaha")

@@ -30,6 +30,8 @@ local Gun_m6dManager = require(ServerScriptService.Server.server_modules.Gun_m6d
 local games = require(ServerScriptService.Server.server_modules.games)
 
 local function onCharacterAdded(char)
+
+    char:WaitForChild("Humanoid").JumpHeight = 5
     char:WaitForChild("HumanoidRootPart").Anchored = true
     char.HumanoidRootPart.CFrame = game:GetService("Workspace").Pre_Spawn.PrimaryPart.CFrame
     
