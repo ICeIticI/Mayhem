@@ -28,7 +28,7 @@ function WeaponsMarket:InitiateAccounts(plr)
     gunsAccounts[plr.UserId] = DataManager:GetData(plr, "OwnedWeapons")
 
     -- new players should start with default weapon, the glock
-    if #gunsAccounts[plr.UserId] == 0 then
+    if #utilities.makeTableFromDictionaryValues(gunsAccounts[plr.UserId]) <= 0 then
         gunsAccounts[plr.UserId] = {["Glock 17"] = {["name"] = "Glock 17", ["equipped"] = true}}
     end
 

@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
+local BadgeService = game:GetService("BadgeService")
 
 local RemoteEvent = Instance.new("RemoteEvent")
 RemoteEvent.Name = "RemoteEvent"
@@ -53,7 +54,16 @@ local function onCharacterAdded(char)
 end
 
 local function onPlayerAdded(player)
-    -- Lock player's camera in first person:
+    
+    -- Halloween 2025 badge:
+    local currentMonth = tonumber(os.date("%m"))
+    local currentYear = tonumber(os.date("%Y"))
+    if currentMonth == 10 and currentYear == 2025 then -- 10/2025 - oct 2025
+        if not BadgeService:UserHasBadgeAsync(player.UserId, 2134625073538853) then
+            BadgeService:AwardBadge(player.UserId, 2134625073538853)
+        end
+    end
+
 
     -- utilities.createInstance("Folder", {Name = "equippedWeapons", Parent = player})
     utilities.createInstance("Folder", {Name = "unequippedWeapons", Parent = player})
@@ -85,5 +95,7 @@ game:BindToClose(function()
 end)
 
 while true do
-    games.run()
+    pcall(function()
+        games.run()
+    end)
 end

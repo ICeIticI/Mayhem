@@ -670,6 +670,11 @@ end
 function Gun:SetAmmoToDefault()
 	self.magCurrent = self.magCapacity -- how many bullets are currently in the clip
 	self.ammoCurrent = self.ammoMax / 2 -- how many bullets the shooter is holding not in the clip
+
+	-- update the UI:
+	if self.plr then
+		RemoteEvent:FireClient(self.plr, "reload", {magCurrent = self.magCurrent, magCapacity = self.magCapacity, ammoCurrent = self.ammoCurrent})
+	end
 end
 
 function Gun:Sprint()
@@ -759,6 +764,11 @@ function Gun:BulletImpact(cast, result, velocity, bullet)
 
 	local rayInstance = result.Instance -- oddly, FastCast results are never nil, so this line of code is safe
 	local resultHumanoid = rayInstance.Parent:FindFirstChild("Humanoid")
+
+	local resultPlr = Players:GetPlayerFromCharacter(resultHumanoid.Parent)
+	if self.plr and self.plr.Team and resultPlr then
+		if self.plr.Team == resultPlr.Team then return end
+	end
 
 	if resultHumanoid and resultHumanoid.Health > 0 then
 		if rayInstance == rayInstance.Parent:FindFirstChild("Head") then

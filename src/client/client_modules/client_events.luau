@@ -78,6 +78,7 @@ local function receiveClientEvent(protocol, data)
 		shopManager.buttons[data.weaponName]:closePurchase()
 
 	elseif protocol == "CountdownChange" then
+		print(#data.winnerIdsTable)
 
 		if data.winnerIdsTable and #data.winnerIdsTable > 0 then
 
@@ -106,6 +107,10 @@ local function receiveClientEvent(protocol, data)
 
 	elseif protocol == "stopAnimation" then
 		ClientVariables.tracks[data.animName]:Stop()
+
+
+	elseif protocol == "revealJuggernaut" then
+		ClientVariables.revealGUI.Parent = Players:FindFirstChild(data.chosenBeastName).Character:WaitForChild("Head")
 	end
 end
 

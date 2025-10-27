@@ -9,6 +9,7 @@ ClientVariables.Main_Display = ClientVariables.Gun_GUI:WaitForChild("Ammo_Displa
 ClientVariables.gunCursor = "rbxasset://textures/GunCursor.png"
 ClientVariables.reloadingCursor = "rbxasset://textures/GunWaitCursor.png"
 ClientVariables.previousMouseIcon = game:GetService("UserInputService").MouseIcon
+ClientVariables.revealGUI = game:GetService("ReplicatedStorage"):WaitForChild("revealGUI")
 
 ClientVariables.tracks = {} -- dictionary of AnimationTracks the player can play. Their Ids are sent from the server.
 

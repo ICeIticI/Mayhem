@@ -90,13 +90,13 @@ local gamemodes = {
     },
 
     {
-        gamemode_name = "The Beast",
+        gamemode_name = "Juggernaut",
         timer = 600,
         roundReward = 50,
         run = function()
             
             -- prepare teams:
-            local Beast_Team = ServerStorage.TeamsStorage:WaitForChild("The Beast")
+            local Beast_Team = ServerStorage.TeamsStorage:WaitForChild("Juggernaut")
             local Neutral_Team = ServerStorage.TeamsStorage:WaitForChild("Neutral")
             Beast_Team.Parent = Teams
             Neutral_Team.Parent = Teams
@@ -127,6 +127,7 @@ local gamemodes = {
             chosenBeast.Character.Humanoid.MaxHealth *= 8 * beastHealthMultiplier
             chosenBeast.Character.Humanoid.Health = chosenBeast.Character.Humanoid.MaxHealth
             print(chosenBeast.Character.Humanoid.MaxHealth, beastHealthMultiplier)
+            RemoteEvent:FireAllClients("revealJuggernaut", {chosenBeastName = chosenBeast.Name})
 
             local diedConnect
             diedConnect = chosenBeast.Character.Humanoid.Died:Connect(function()
@@ -136,6 +137,7 @@ local gamemodes = {
                     end
                 end
                 countdown.Value = 0
+                gamePeriod = "Ended"
             end)
 
             -- disconnect tracking kills after the round ends:
@@ -155,8 +157,7 @@ function games.run()
 
     -- Pick gamemode:
     local chosenGamemode = gamemodes[math.random(1, #gamemodes)]
-    chosenGamemode = gamemodes[2] -- ! DELETE WHEN DONE TESTING !
-
+    -- chosenGamemode = gamemodes[2] -- ! DELETE WHEN DONE TESTING !
 
     -- Clear old-round data for the new:
     table.clear(currentRoundPlayers)
@@ -164,7 +165,7 @@ function games.run()
 
     -- Intermission:
     gamePeriod = "Intermission"
-    countdown.Value = 10
+    countdown.Value = 3
     for i = countdown.Value, 0, -1 do
         countdown.Value = i
         task.wait(1)
@@ -173,6 +174,7 @@ function games.run()
 
     -- Gather the players:
     for _, player in pairs(game.Players:GetPlayers()) do -- currentRoundPlayers gets added as players join the game and press Play
+        player.Team = nil
         games.addPlayerToRound(player)
         if player.IsLoaded.Value then
             games.spawnCharacter(player.Character)
@@ -193,6 +195,13 @@ function games.run()
         end
     end
 
+    gamePeriod = "Chosen gamemode: " ..tostring(chosenGamemode.gamemode_name)
+    countdown.Value = 3
+    for i = countdown.Value, 0, -1 do
+        countdown.Value = i
+        task.wait(1)
+    end
+
     -- Ready the gamemode:
     chosenGamemode.run()
 
@@ -207,44 +216,49 @@ function games.run()
         task.wait(1)
     end
 
-
-    -- Let the games begin!
-    warn("Let the games begin!")
-    for _, player in pairs(currentRoundPlayers) do
-        if not player.IsLoaded then continue end
-        player.Character.HumanoidRootPart.Anchored = false
-    end
-    gamePeriod = "Ongoing"
-
-
-    -- Start a timer to countdown until match ends:
-    countdown.Value = chosenGamemode.timer
-    for i = countdown.Value, 0, -1 do
-        countdown.Value = i
-        task.wait(1)
-        if countdown.Value <= 0 then break end -- if I manually set it to 0 cause round ended early, such as the Beast getting killed.
-    end
-
-    -- Match ended! Freeze players, count scores, declare winner!
-    gamePeriod = "Ended"
-    for _, plr in pairs(currentRoundPlayers) do
-        if plr.Character then
-            plr.Character.HumanoidRootPart.Anchored = true
+    -- if something caused the game to end early, changing gamePeriod to something else, then we dont want to even start it:
+    -- for example, The Beast reset before game starts:
+    if gamePeriod == "Countdown" then
+        -- Let the games begin!
+        warn("Let the games begin!")
+        for _, player in pairs(currentRoundPlayers) do
+            if not player.IsLoaded then continue end
+            player.Character.HumanoidRootPart.Anchored = false
         end
-    end
-
-    if #winnerIdsTable > 0 then
-        for _, winnerId in pairs(winnerIdsTable) do
-            local winner = Players:GetPlayerByUserId(winnerId)
-            warn(winner)
-            WeaponsMarket:AwardCash(winner, chosenGamemode.roundReward)
-        end
-    end
+        gamePeriod = "Ongoing"
     
-    for i = 5, 0, -1 do
-        countdown.Value = i
-        task.wait(1)
+    
+        -- Start a timer to countdown until match ends:
+        countdown.Value = chosenGamemode.timer
+        for i = countdown.Value, 0, -1 do
+            countdown.Value = i
+            task.wait(1)
+            if countdown.Value <= 0 then break end -- if I manually set it to 0 cause round ended early, such as the Beast getting killed.
+        end
+
+        -- Match ended! Freeze players, count scores, declare winner!
+        gamePeriod = "Ended"
+        for _, plr in pairs(currentRoundPlayers) do
+            if plr.Character then
+                plr.Character.HumanoidRootPart.Anchored = true
+            end
+        end
+
+        if #winnerIdsTable > 0 then
+            for _, winnerId in pairs(winnerIdsTable) do
+                local winner = Players:GetPlayerByUserId(winnerId)
+                warn(winner)
+                WeaponsMarket:AwardCash(winner, chosenGamemode.roundReward)
+            end
+        end
+        
+        for i = 5, 0, -1 do
+            countdown.Value = i
+            task.wait(1)
+        end
+        
     end
+
 
     -- returning teams
     for _, team in pairs(Teams:GetChildren()) do

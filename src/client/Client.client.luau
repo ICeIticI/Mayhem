@@ -31,6 +31,9 @@ end
 local Seasonal = require(ReplicatedStorage.Shared.Seasonal)
 Seasonal.init()
 
+local invite_friends = require(StarterPlayer.StarterPlayerScripts.Client.client_modules.invite_friends)
+invite_friends.init()
+
 local ClientVariables = require(StarterPlayer.StarterPlayerScripts.Client.client_modules.ClientVariables)
 require(StarterPlayer.StarterPlayerScripts.Client.client_modules.client_events)
 local ShopManager = require(StarterPlayer.StarterPlayerScripts.Client.client_modules.shopManager)
@@ -98,6 +101,7 @@ local function onCharacterAdded(character)
     ClientVariables.Gun_GUI.ShopButton.Visible = true
     ClientVariables.Gun_GUI.Cash_Display.Visible = true
     ClientVariables.Gun_GUI.Kills_Display.Visible = true
+    ClientVariables.Gun_GUI.InviteButton.Visible = true
     ClientVariables.Gun_GUI.round_leaderboard.Visible = false
 
     ClientVariables.menuMusic:Play()
@@ -184,6 +188,7 @@ ClientVariables.Gun_GUI.PlayButton.Activated:Connect(function()
     ClientVariables.Gun_GUI.shop_frame.Visible = false
     ClientVariables.Gun_GUI.Cash_Display.Visible = false
     ClientVariables.Gun_GUI.Kills_Display.Visible = false
+    ClientVariables.Gun_GUI.InviteButton.Visible = false
     ClientVariables.Gun_GUI.round_leaderboard.Visible = true
 
     ClientVariables.menuMusic:Stop()

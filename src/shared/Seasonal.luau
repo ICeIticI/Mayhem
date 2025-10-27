@@ -9,6 +9,9 @@
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local player = game:GetService("Players").LocalPlayer
+local ScreenGui = player.PlayerGui:WaitForChild("ScreenGui")
+
 local Seasonal = {}
 
 function Seasonal.init() -- singleton - runs once.
@@ -32,12 +35,13 @@ function Seasonal.init() -- singleton - runs once.
         Lighting.Brightness = 6
         Lighting.TimeOfDay = "21:00:00"
 
-        local Workspace = game:GetService("Workspace")
         local Particles = Workspace:WaitForChild("EmbersParticles").ParticleEmitter
         Particles.Texture = "rbxassetid://244982565"
 
         Workspace:WaitForChild("Baseplate").Material = Enum.Material.LeafyGrass
         Workspace.Baseplate.Color = Color3.fromRGB(143,76,42)
+
+        ScreenGui.Game_Title.Text = "🎃Mayhem🎃"
     end
     
 end
