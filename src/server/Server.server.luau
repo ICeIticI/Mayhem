@@ -50,6 +50,14 @@ local function onCharacterAdded(char)
             utilities.createInstance("StringValue", {Name = weaponData.name, Parent = player.unequippedWeapons})
         end
     end
+
+    local diedConnect
+    diedConnect = char.Humanoid.Died:Connect(function()
+        print(player.IsLoaded.Value)
+        player.IsLoaded.Value = false
+        diedConnect:Disconnect()
+    end)
+
     RemoteEvent:FireClient(player, "readyToInitButtons")
 end
 
@@ -64,7 +72,6 @@ local function onPlayerAdded(player)
         end
     end
 
-
     -- utilities.createInstance("Folder", {Name = "equippedWeapons", Parent = player})
     utilities.createInstance("Folder", {Name = "unequippedWeapons", Parent = player})
     utilities.createInstance("BoolValue", {Name = "IsLoaded", Value = false, Parent = player})
@@ -76,6 +83,7 @@ local function onPlayerAdded(player)
         onCharacterAdded(player.Character)
     end
     player.CharacterAdded:Connect(onCharacterAdded)
+    
 end
 
 local function onPlayerRemove(player)

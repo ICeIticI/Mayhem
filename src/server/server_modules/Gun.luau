@@ -762,31 +762,38 @@ end
 
 function Gun:BulletImpact(cast, result, velocity, bullet)
 
-	local rayInstance = result.Instance -- oddly, FastCast results are never nil, so this line of code is safe
-	local resultHumanoid = rayInstance.Parent:FindFirstChild("Humanoid")
+	local success, result = pcall(function()
+		local rayInstance = result and result.Instance -- oddly, FastCast results are never nil, so this line of code is safe
+		if not result then return end
 
-	local resultPlr = Players:GetPlayerFromCharacter(resultHumanoid.Parent)
-	if self.plr and self.plr.Team and resultPlr then
-		if self.plr.Team == resultPlr.Team then return end
-	end
+		local resultHumanoid = rayInstance and rayInstance.Parent and rayInstance.Parent:FindFirstChild("Humanoid")
+		if not resultHumanoid then return end
 
-	if resultHumanoid and resultHumanoid.Health > 0 then
-		if rayInstance == rayInstance.Parent:FindFirstChild("Head") then
-			-- print("You hit "..tostring(rayInstance.Parent) .." by headshot!")
-			RemoteEvent:FireClient(self.plr, "characterHit", {hitSound = self.Gun_Sounds.Headshot})
-			rayInstance.Parent.Humanoid:TakeDamage(self.damage*2)
-		else
-			-- print("You hit "..tostring(rayInstance.Parent) .."'s "..tostring(rayInstance.Name))
-			RemoteEvent:FireClient(self.plr, "characterHit", {hitSound = self.Gun_Sounds.Hit})
-			rayInstance.Parent.Humanoid:TakeDamage(self.damage)
+		local resultPlr = Players:GetPlayerFromCharacter(resultHumanoid.Parent)
+		if self.plr and self.plr.Team and resultPlr then
+			if self.plr.Team == resultPlr.Team then return end
 		end
 	
-		if resultHumanoid and resultHumanoid.Health <= 0 then
-			-- Give shooter money:
-			WeaponsMarket:AwardKill(self.plr, 1)
-			WeaponsMarket:AwardCash(self.plr, 5)
+		if resultHumanoid and resultHumanoid.Health > 0 then
+			if rayInstance == rayInstance.Parent:FindFirstChild("Head") then
+				-- print("You hit "..tostring(rayInstance.Parent) .." by headshot!")
+				RemoteEvent:FireClient(self.plr, "characterHit", {hitSound = self.Gun_Sounds.Headshot})
+				rayInstance.Parent.Humanoid:TakeDamage(self.damage*2)
+			else
+				-- print("You hit "..tostring(rayInstance.Parent) .."'s "..tostring(rayInstance.Name))
+				RemoteEvent:FireClient(self.plr, "characterHit", {hitSound = self.Gun_Sounds.Hit})
+				rayInstance.Parent.Humanoid:TakeDamage(self.damage)
+			end
+		
+			if resultHumanoid and resultHumanoid.Health <= 0 then
+				-- Give shooter money:
+				WeaponsMarket:AwardKill(self.plr, 1)
+				WeaponsMarket:AwardCash(self.plr, 5)
+			end
 		end
-	end
+	end)
+
+	if not success then warn(result) end
 	
 	task.delay(1.25, function() -- delay is like wait(), but instead it doesn't yield the entire script, and will be like a wait() on a seperate thread.
 		bulletCache:ReturnPart(bullet)

@@ -96,8 +96,8 @@ local gamemodes = {
         run = function()
             
             -- prepare teams:
-            local Beast_Team = ServerStorage.TeamsStorage:WaitForChild("Juggernaut")
-            local Neutral_Team = ServerStorage.TeamsStorage:WaitForChild("Neutral")
+            local Beast_Team = ServerStorage.TeamsStorage:FindFirstChild("Juggernaut") or Teams:FindFirstChild("Juggernaut")
+            local Neutral_Team = ServerStorage.TeamsStorage:WaitForChild("Neutral") or Teams:FindFirstChild("Neutral")
             Beast_Team.Parent = Teams
             Neutral_Team.Parent = Teams
 
@@ -130,7 +130,7 @@ local gamemodes = {
             RemoteEvent:FireAllClients("revealJuggernaut", {chosenBeastName = chosenBeast.Name})
 
             local diedConnect
-            diedConnect = chosenBeast.Character.Humanoid.Died:Connect(function()
+            diedConnect = chosenBeast.CharacterRemoving:Connect(function()
                 for _, plr in pairs(currentRoundPlayers_TableVersion) do
                     if plr ~= chosenBeast then
                         table.insert(winnerIdsTable, plr.UserId)

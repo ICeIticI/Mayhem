@@ -49,6 +49,9 @@ local function receiveServerEvent(plr, protocol, data)
 
     if protocol == "inputStarted" then
 
+        print(plr.IsLoaded.Value)
+        if not plr.IsLoaded.Value then return end
+
         if inputType == "ShootInputs" then
             plrGun:Fire(data.ray)
         elseif inputType == "ReloadInputs" then

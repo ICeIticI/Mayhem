@@ -55,6 +55,8 @@ ClientVariables.functions = {
         -- Rebuild leaderboard
         for rank, entry in ipairs(sortedPlayers) do
             local player = entry.player
+            if not player then continue end
+            
             local score = entry.score
     
             local row = Instance.new("Frame")

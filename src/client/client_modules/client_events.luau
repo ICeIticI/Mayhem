@@ -78,7 +78,6 @@ local function receiveClientEvent(protocol, data)
 		shopManager.buttons[data.weaponName]:closePurchase()
 
 	elseif protocol == "CountdownChange" then
-		print(#data.winnerIdsTable)
 
 		if data.winnerIdsTable and #data.winnerIdsTable > 0 then
 

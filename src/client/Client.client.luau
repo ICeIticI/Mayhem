@@ -142,7 +142,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
     if gameProcessedEvent then return end
     
     if inputType == "ShootInputs" then
-        if ClientVariables.gunTool and (not ClientVariables.gunTool.Values.shootDebounce.Value or not ClientVariables.gunTool.Values.IsFullAuto.Value) and ClientVariables.gunTool.Activated then
+        if ClientVariables.gunTool and (not ClientVariables.gunTool:WaitForChild("Values"):WaitForChild("shootDebounce").Value or not ClientVariables.gunTool.Values.IsFullAuto.Value) and ClientVariables.gunTool.Activated then
             isHolding = true
             if ClientVariables.gunTool.Values.IsFullAuto.Value then
                 while isHolding and ClientVariables.gunTool.Equipped do
