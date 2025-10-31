@@ -1,7 +1,5 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local StarterPlayer = game:GetService("StarterPlayer")
 local UserInputService = game:GetService("UserInputService")
-local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
@@ -28,25 +26,22 @@ for _, wall in pairs(fogWalls:GetChildren()) do
     ParticleEmitter.Parent = wall
 end
 
-local Seasonal = require(ReplicatedStorage.Shared.Seasonal)
-Seasonal.init()
+local ModuleLoader = require(ReplicatedStorage.Shared.ModuleLoader)
+ModuleLoader.init()
 
-local invite_friends = require(StarterPlayer.StarterPlayerScripts.Client.client_modules.invite_friends)
-invite_friends.init()
-
-local ClientVariables = require(StarterPlayer.StarterPlayerScripts.Client.client_modules.ClientVariables)
-require(StarterPlayer.StarterPlayerScripts.Client.client_modules.client_events)
-local ShopManager = require(StarterPlayer.StarterPlayerScripts.Client.client_modules.shopManager)
-local utilities = require(ReplicatedStorage.Shared.utilities)
-local move_arms
+ModuleLoader.Seasonal.init()
+ModuleLoader.ClientVariables.init()
+ModuleLoader.invite_friends.init()
+ModuleLoader.client_events.init()
+ModuleLoader.shopManager.init()
 task.spawn(function()
-    move_arms = require(StarterPlayer.StarterPlayerScripts.Client.client_modules.move_arms)
+    ModuleLoader.move_arms.init()
 end)
 
 local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")
 local camera = workspace.CurrentCamera
 local isHolding = false
-ClientVariables.menuMusic = utilities.createInstance("Sound", {Name = "menuMusic", SoundId = "rbxassetid://87753640000210", Looped = true, Parent = game:GetService("SoundService")})
+ModuleLoader.ClientVariables.menuMusic = ModuleLoader.utilities.createInstance("Sound", {Name = "menuMusic", SoundId = "rbxassetid://87753640000210", Looped = true, Parent = game:GetService("SoundService")})
 
 local PlayScreenFocus = game:GetService("Workspace"):WaitForChild("PlayScreenFocus")
 -- Mirosoft Copilot object-circling code cause idk how to do it:
@@ -69,45 +64,45 @@ end)
 
 local function onChildChanged(child)
     if child:IsA("Tool") and child:GetAttribute("Gun") then
-        if child.Parent == ClientVariables.player.Backpack or child.Parent == ClientVariables.player.Character then
+        if child.Parent == ModuleLoader.ClientVariables.player.Backpack or child.Parent == ModuleLoader.ClientVariables.player.Character then
             -- equipped weapon
-            ClientVariables.gunTool = child
-            ShopManager.buttons[child.Name]:SwapParents(true)
+            ModuleLoader.ClientVariables.gunTool = child
+            ModuleLoader.shopManager.buttons[child.Name]:SwapParents(true)
 
-            if child.Parent == ClientVariables.player.Character and ClientVariables.player.Character.Parent then
-                move_arms.activate()
+            if child.Parent == ModuleLoader.ClientVariables.player.Character and ModuleLoader.ClientVariables.player.Character.Parent then
+                ModuleLoader.move_arms.activate()
             else
-                move_arms.deactivate()
+                ModuleLoader.move_arms.deactivate()
             end
         else
             warn("Unequip")
-            ShopManager.buttons[child.Name]:SwapParents(false)
+            ModuleLoader.shopManager.buttons[child.Name]:SwapParents(false)
         end
     end
 end
 
 local function startInputToServer(inputTable, gameProcessedEvent) -- sends to the server our input and where we're firing at
     local screenCenter = camera.ViewportSize / 2
-    ClientVariables.ray = camera:ViewportPointToRay(screenCenter.X, screenCenter.Y)
-    RemoteEvent:FireServer("inputStarted", {input = inputTable, gameProcessedEvent = gameProcessedEvent, ray = ClientVariables.ray})
+    ModuleLoader.ClientVariables.ray = camera:ViewportPointToRay(screenCenter.X, screenCenter.Y)
+    RemoteEvent:FireServer("inputStarted", {input = inputTable, gameProcessedEvent = gameProcessedEvent, ray = ModuleLoader.ClientVariables.ray})
 
 end
 
 local function onCharacterAdded(character)
-    ClientVariables.camera.CameraSubject = game:GetService("Workspace"):WaitForChild("PlayScreenFocus")
-    ClientVariables.camera.CameraType = Enum.CameraType.Orbital
-    ClientVariables.Gun_GUI:WaitForChild("PlayButton").Visible = true
-    ClientVariables.Gun_GUI.Game_Title.Visible = true
-    ClientVariables.Gun_GUI.ShopButton.Visible = true
-    ClientVariables.Gun_GUI.Cash_Display.Visible = true
-    ClientVariables.Gun_GUI.Kills_Display.Visible = true
-    ClientVariables.Gun_GUI.InviteButton.Visible = true
-    ClientVariables.Gun_GUI.round_leaderboard.Visible = false
+    ModuleLoader.ClientVariables.camera.CameraSubject = game:GetService("Workspace"):WaitForChild("PlayScreenFocus")
+    ModuleLoader.ClientVariables.camera.CameraType = Enum.CameraType.Orbital
+    ModuleLoader.ClientVariables.Gun_GUI:WaitForChild("PlayButton").Visible = true
+    ModuleLoader.ClientVariables.Gun_GUI.Game_Title.Visible = true
+    ModuleLoader.ClientVariables.Gun_GUI.ShopButton.Visible = true
+    ModuleLoader.ClientVariables.Gun_GUI.Cash_Display.Visible = true
+    ModuleLoader.ClientVariables.Gun_GUI.Kills_Display.Visible = true
+    ModuleLoader.ClientVariables.Gun_GUI.InviteButton.Visible = true
+    ModuleLoader.ClientVariables.Gun_GUI.round_leaderboard.Visible = false
 
-    ClientVariables.menuMusic:Play()
+    ModuleLoader.ClientVariables.menuMusic:Play()
 
     local onChildAddedConnect, onChildRemovedConnect
-    local parent = ClientVariables.player.Backpack
+    local parent = ModuleLoader.ClientVariables.player.Backpack
     onChildAddedConnect = parent.ChildAdded:Connect(function(child)
         parent:WaitForChild(child.Name)
         onChildChanged(child)
@@ -117,22 +112,22 @@ local function onCharacterAdded(character)
     end)
 
     local diedConnect
-    diedConnect = ClientVariables.player.Character.Humanoid.Died:Connect(function()
+    diedConnect = ModuleLoader.ClientVariables.player.Character.Humanoid.Died:Connect(function()
         diedConnect:Disconnect()
         onChildAddedConnect:Disconnect()
         onChildRemovedConnect:Disconnect()
     end)
 end
 
-if ClientVariables.player.Character then
-    onCharacterAdded(ClientVariables.player.Character)
+if ModuleLoader.ClientVariables.player.Character then
+    onCharacterAdded(ModuleLoader.ClientVariables.player.Character)
 end
-ClientVariables.player.CharacterAdded:Connect(function(character)
+ModuleLoader.ClientVariables.player.CharacterAdded:Connect(function(character)
     onCharacterAdded(character)
 end)
 
 UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
-    local inputType = utilities.checkInput(input)
+    local inputType = ModuleLoader.utilities.checkInput(input)
     if not inputType then return end
 
     local inputTable = {} -- Because the server wont let us send the input object, we need to create a table representing input that are strings
@@ -142,10 +137,10 @@ UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
     if gameProcessedEvent then return end
     
     if inputType == "ShootInputs" then
-        if ClientVariables.gunTool and (not ClientVariables.gunTool:WaitForChild("Values"):WaitForChild("shootDebounce").Value or not ClientVariables.gunTool.Values.IsFullAuto.Value) and ClientVariables.gunTool.Activated then
+        if ModuleLoader.ClientVariables.gunTool and (not ModuleLoader.ClientVariables.gunTool:WaitForChild("Values"):WaitForChild("shootDebounce").Value or not ModuleLoader.ClientVariables.gunTool.Values.IsFullAuto.Value) and ModuleLoader.ClientVariables.gunTool.Activated then
             isHolding = true
-            if ClientVariables.gunTool.Values.IsFullAuto.Value then
-                while isHolding and ClientVariables.gunTool.Equipped do
+            if ModuleLoader.ClientVariables.gunTool.Values.IsFullAuto.Value then
+                while isHolding and ModuleLoader.ClientVariables.gunTool.Equipped do
                     startInputToServer(inputTable, gameProcessedEvent)
                     task.wait()
                 end
@@ -159,7 +154,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
 end)
 
 UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
-    local inputType = utilities.checkInput(input)
+    local inputType = ModuleLoader.utilities.checkInput(input)
     if not inputType then return end
     
     local inputTable = {} -- Because the server wont let us send the input object, we need to create a table representing input that are strings
@@ -173,25 +168,25 @@ UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
     end
 end)
 
-ClientVariables.gunTool = utilities.FindChildByAttributes(ClientVariables.player.Backpack, {Gun = true})
+ModuleLoader.ClientVariables.gunTool = ModuleLoader.utilities.FindChildByAttributes(ModuleLoader.ClientVariables.player.Backpack, {Gun = true})
 
-ClientVariables.Gun_GUI.PlayButton.Visible = true
-ClientVariables.Gun_GUI.Game_Title.Visible = true
+ModuleLoader.ClientVariables.Gun_GUI.PlayButton.Visible = true
+ModuleLoader.ClientVariables.Gun_GUI.Game_Title.Visible = true
 
-ClientVariables.Gun_GUI.PlayButton.Activated:Connect(function()
-    ClientVariables.camera.CameraSubject = ClientVariables.player.Character:WaitForChild("Humanoid")
-    ClientVariables.camera.CameraType = Enum.CameraType.Custom
+ModuleLoader.ClientVariables.Gun_GUI.PlayButton.Activated:Connect(function()
+    ModuleLoader.ClientVariables.camera.CameraSubject = ModuleLoader.ClientVariables.player.Character:WaitForChild("Humanoid")
+    ModuleLoader.ClientVariables.camera.CameraType = Enum.CameraType.Custom
     
-    ClientVariables.Gun_GUI.PlayButton.Visible = false
-    ClientVariables.Gun_GUI.Game_Title.Visible = false
-    ClientVariables.Gun_GUI.ShopButton.Visible = false
-    ClientVariables.Gun_GUI.shop_frame.Visible = false
-    ClientVariables.Gun_GUI.Cash_Display.Visible = false
-    ClientVariables.Gun_GUI.Kills_Display.Visible = false
-    ClientVariables.Gun_GUI.InviteButton.Visible = false
-    ClientVariables.Gun_GUI.round_leaderboard.Visible = true
+    ModuleLoader.ClientVariables.Gun_GUI.PlayButton.Visible = false
+    ModuleLoader.ClientVariables.Gun_GUI.Game_Title.Visible = false
+    ModuleLoader.ClientVariables.Gun_GUI.ShopButton.Visible = false
+    ModuleLoader.ClientVariables.Gun_GUI.shop_frame.Visible = false
+    ModuleLoader.ClientVariables.Gun_GUI.Cash_Display.Visible = false
+    ModuleLoader.ClientVariables.Gun_GUI.Kills_Display.Visible = false
+    ModuleLoader.ClientVariables.Gun_GUI.InviteButton.Visible = false
+    ModuleLoader.ClientVariables.Gun_GUI.round_leaderboard.Visible = true
 
-    ClientVariables.menuMusic:Stop()
+    ModuleLoader.ClientVariables.menuMusic:Stop()
     
     RemoteEvent:FireServer("play")
 

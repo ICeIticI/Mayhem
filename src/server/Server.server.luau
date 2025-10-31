@@ -1,6 +1,5 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
 local BadgeService = game:GetService("BadgeService")
 
 local RemoteEvent = Instance.new("RemoteEvent")
@@ -12,23 +11,18 @@ RemoteFunction.Name = "RemoteFunction"
 RemoteFunction.Parent = ReplicatedStorage
 
 local ModuleLoader = require(ReplicatedStorage.Shared.ModuleLoader)
-
+ModuleLoader.init()
 
 -- local Seasonal = require(game.ReplicatedStorage.Shared.Seasonal)
 -- Seasonal.init()
-local AnimationService_Server = require(ServerScriptService.Server.server_modules.AnimationService_Server)
-AnimationService_Server.init()
 
-local refillAmmo = require(ServerScriptService.Server.server_modules.Modules.refillAmmo)
-refillAmmo.init()
-
-local DataManager = require(ServerScriptService.Server.server_modules.DataManager)
-local WeaponsMarket = require(ServerScriptService.Server.server_modules.WeaponsMarket)
-require(ServerScriptService.Server.server_modules.server_events) -- Activate remote event & function listeners on the server-side
-local utilities = require(ReplicatedStorage.Shared.utilities)
-local Gun = require(ServerScriptService.Server.server_modules.Gun)
-local Gun_m6dManager = require(ServerScriptService.Server.server_modules.Gun_m6dManager)
-local games = require(ServerScriptService.Server.server_modules.games)
+ModuleLoader.AnimationService_Server.init()
+ModuleLoader.refillAmmo.init()
+ModuleLoader.Gun.init()
+ModuleLoader.DataManager.init()
+ModuleLoader.WeaponsMarket.init()
+ModuleLoader.games.init()
+ModuleLoader.server_events.init()
 
 local function onCharacterAdded(char)
 
@@ -40,14 +34,14 @@ local function onCharacterAdded(char)
     player.CameraMode = Enum.CameraMode.Classic
     player.IsLoaded.Value = false
 
-    Gun_m6dManager.run(player)    
+    ModuleLoader.Gun_m6dManager.init(player)
 
-    for _, weaponData in pairs(WeaponsMarket:GetWeaponsAccount(player)) do
+    for _, weaponData in pairs(ModuleLoader.WeaponsMarket:GetWeaponsAccount(player)) do
         if weaponData.equipped then
-            local newGun = Gun.new(player.Character, Gun.gunPresets[weaponData.name .. "_Preset"])
+            local newGun = ModuleLoader.Gun.new(player.Character, ModuleLoader.Gun.gunPresets[weaponData.name .. "_Preset"])
             newGun.tool.Parent = player.Backpack
         else
-            utilities.createInstance("StringValue", {Name = weaponData.name, Parent = player.unequippedWeapons})
+            ModuleLoader.utilities.createInstance("StringValue", {Name = weaponData.name, Parent = player.unequippedWeapons})
         end
     end
 
@@ -73,11 +67,11 @@ local function onPlayerAdded(player)
     end
 
     -- utilities.createInstance("Folder", {Name = "equippedWeapons", Parent = player})
-    utilities.createInstance("Folder", {Name = "unequippedWeapons", Parent = player})
-    utilities.createInstance("BoolValue", {Name = "IsLoaded", Value = false, Parent = player})
+    ModuleLoader.utilities.createInstance("Folder", {Name = "unequippedWeapons", Parent = player})
+    ModuleLoader.utilities.createInstance("BoolValue", {Name = "IsLoaded", Value = false, Parent = player})
 
-    DataManager:LoadData(player)
-    WeaponsMarket:InitiateAccounts(player)
+    ModuleLoader.DataManager:LoadData(player)
+    ModuleLoader.WeaponsMarket:InitiateAccounts(player)
 
     if player.Character then
         onCharacterAdded(player.Character)
@@ -87,7 +81,7 @@ local function onPlayerAdded(player)
 end
 
 local function onPlayerRemove(player)
-    DataManager:SaveData(player)
+    ModuleLoader.DataManager:SaveData(player)
 end
 
 for _, player in pairs(Players:GetPlayers()) do
@@ -104,6 +98,6 @@ end)
 
 while true do
     pcall(function()
-        games.run()
+        ModuleLoader.games.run()
     end)
 end

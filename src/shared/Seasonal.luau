@@ -5,16 +5,16 @@
     Will also replace the dog tags of "Kill Confirmed"
     for candies or presents for Halloween or Christmas.
 ]]
-
-local Workspace = game:GetService("Workspace")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local player = game:GetService("Players").LocalPlayer
-local ScreenGui = player.PlayerGui:WaitForChild("ScreenGui")
-
 local Seasonal = {}
 
 function Seasonal.init() -- singleton - runs once.
+
+    local Workspace = game:GetService("Workspace")
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+    local player = game:GetService("Players").LocalPlayer
+    local ScreenGui = player.PlayerGui:WaitForChild("ScreenGui")
+
 
     local currentMonth = tonumber(os.date("%m")) -- returns what month number it is (ex. 10 for october).
 
@@ -43,7 +43,6 @@ function Seasonal.init() -- singleton - runs once.
 
         ScreenGui.Game_Title.Text = "🎃Mayhem🎃"
     end
-    
 end
 
 return Seasonal

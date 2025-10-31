@@ -2,20 +2,13 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local MarketplaceService = game:GetService("MarketplaceService")
-local ServerScriptService = game:GetService("ServerScriptService")
 
--- Events & Functions:
+local ModuleLoader
 
-local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")
-local RemoteFunction = ReplicatedStorage:WaitForChild("RemoteFunction")
+local server_events = {}
 
--- Modules:
-
-local utilities = require(ReplicatedStorage.Shared.utilities)
-local Gun = require(ServerScriptService.Server.server_modules.Gun)
-local WeaponsMarket = require(ServerScriptService.Server.server_modules.WeaponsMarket)
-local games = require(ServerScriptService.Server.server_modules.games)
-
+local RemoteEvent
+local RemoteFunction
 
 local function receiveServerEvent(plr, protocol, data)
 
@@ -28,23 +21,23 @@ local function receiveServerEvent(plr, protocol, data)
 
         print("Hey")
         -- make sure bullets cant collide with accessories
-        utilities.filterCharacterObjects(plr.Character, {["Accessory"] = true})
+        ModuleLoader.utilities.filterCharacterObjects(plr.Character, {["Accessory"] = true})
         
         plr.Character.HumanoidRootPart.Anchored = false
         plr.IsLoaded.Value = true
-        if games.getGamePeriod() == "Ongoing" then
-            games.addPlayerToRound(plr)
+        if ModuleLoader.games.getGamePeriod() == "Ongoing" then
+            ModuleLoader.games.addPlayerToRound(plr)
         end
-        games.spawnCharacter(plr.Character)
+        ModuleLoader.games.spawnCharacter(plr.Character)
         return
     end
 
 
-    local inputType = utilities.checkInput(data.input)
+    local inputType = ModuleLoader.utilities.checkInput(data.input)
     if not inputType and protocol ~= "move_arms" then return end -- only allow specific inputs
 
-    local plrGun = Gun.activeGuns[plr.Name]
-    if (not plrGun or not plrGun.isEquipped or games.getGamePeriod() ~= "Ongoing") and protocol ~= "move_arms" then return end -- they should absolutely have their gun equipped to use it
+    local plrGun = ModuleLoader.Gun.activeGuns[plr.Name]
+    if (not plrGun or not plrGun.isEquipped or ModuleLoader.games.getGamePeriod() ~= "Ongoing") and protocol ~= "move_arms" then return end -- they should absolutely have their gun equipped to use it
 
 
     if protocol == "inputStarted" then
@@ -76,24 +69,24 @@ end
 
 local function receiveServerInvoke(plr, protocol, data)
     if protocol == "getItem" then
-        local plrGun = Gun.activeGuns[plr.Name]
+        local plrGun = ModuleLoader.Gun.activeGuns[plr.Name]
 
-        local money = WeaponsMarket:GetCashAccount(plr).Value
-        local kills = WeaponsMarket:GetKillsAccount(plr).Value
+        local money = ModuleLoader.WeaponsMarket:GetCashAccount(plr).Value
+        local kills = ModuleLoader.WeaponsMarket:GetKillsAccount(plr).Value
         
-        local config = Gun.gunPresets[data.name .. "_Preset"]
+        local config = ModuleLoader.Gun.gunPresets[data.name .. "_Preset"]
         
         if config then
             
             -- do we own the gun?
-            local ownedWeapons = WeaponsMarket:GetWeaponsAccount(plr)
+            local ownedWeapons = ModuleLoader.WeaponsMarket:GetWeaponsAccount(plr)
             -- Checks if the desired weapon is equipped:
-            local equippedWeapon = utilities.FindChildByNameWhichIsA(plr.Backpack, data.name, "Tool") or utilities.FindChildByNameWhichIsA(plr.Character, data.name, "Tool")
+            local equippedWeapon = ModuleLoader.utilities.FindChildByNameWhichIsA(plr.Backpack, data.name, "Tool") or ModuleLoader.utilities.FindChildByNameWhichIsA(plr.Character, data.name, "Tool")
             
             if ownedWeapons[data.name] and ownedWeapons[data.name].equipped then -- The weapon is equipped already
                 
                 if plrGun and plrGun.name then
-                    WeaponsMarket:AddWeaponToWeaponsAccount(plr, plrGun.name, false)
+                    ModuleLoader.WeaponsMarket:AddWeaponToWeaponsAccount(plr, plrGun.name, false)
                     plrGun:Remove()
                 end
 
@@ -101,13 +94,13 @@ local function receiveServerInvoke(plr, protocol, data)
 
                 -- For now we only allow one weapon to be equipped, which is intended to be changed later:
                 if plrGun and plrGun.name then -- unequips current weapon:
-                    WeaponsMarket:AddWeaponToWeaponsAccount(plr, plrGun.name, false)
+                    ModuleLoader.WeaponsMarket:AddWeaponToWeaponsAccount(plr, plrGun.name, false)
                     plrGun:Remove()
                 end
             
-                plrGun = Gun.new(plr.Character, config)
+                plrGun = ModuleLoader.Gun.new(plr.Character, config)
                 plrGun.tool.Parent = plr.Backpack
-                WeaponsMarket:AddWeaponToWeaponsAccount(plr, plrGun.name, true)
+                ModuleLoader.WeaponsMarket:AddWeaponToWeaponsAccount(plr, plrGun.name, true)
 
             else -- The weapon isn't owned yet
                 -- make sure they have enough moneys and enough kills:
@@ -115,11 +108,11 @@ local function receiveServerInvoke(plr, protocol, data)
                 and kills >= config.killsRequired
                 then
                     -- charge and give weapon:
-                    WeaponsMarket:SubtractCash(plr, config.cost)
+                    ModuleLoader.WeaponsMarket:SubtractCash(plr, config.cost)
                     -- local desiredWeapon = Gun.new(plr.Character, config)
                     -- desiredWeapon.tool.Parent = plr.unequippedWeapons
 
-                    WeaponsMarket:AddWeaponToWeaponsAccount(plr, config.name, false)
+                    ModuleLoader.WeaponsMarket:AddWeaponToWeaponsAccount(plr, config.name, false)
 
                     return "purchased"
                 else
@@ -147,13 +140,13 @@ local function onProcessReceipt(receiptInfo)
 	end
 	-- if the script makes it here, then the player is still in the game and we can do stuff in return because of their purchase
 	
-    local presetWithGivenProductId = Gun.presetProductIds[receiptInfo.ProductId]
+    local presetWithGivenProductId = ModuleLoader.Gun.presetProductIds[receiptInfo.ProductId]
 	if presetWithGivenProductId then
 		-- local desiredWeapon = Gun.new(player.Character, Gun.gunPresets[presetWithGivenProductId])
         -- desiredWeapon.tool.Parent = player.unequippedWeapons
 
-        local desiredWeaponName = Gun.gunPresets[presetWithGivenProductId].name
-        WeaponsMarket:AddWeaponToWeaponsAccount(player, desiredWeaponName, false)
+        local desiredWeaponName = ModuleLoader.Gun.gunPresets[presetWithGivenProductId].name
+        ModuleLoader.WeaponsMarket:AddWeaponToWeaponsAccount(player, desiredWeaponName, false)
 		RemoteEvent:FireClient(player, "weaponProductPurchased", {weaponName = desiredWeaponName})
 	end
 
@@ -161,9 +154,18 @@ local function onProcessReceipt(receiptInfo)
 
 end
 
-RemoteEvent.OnServerEvent:Connect(receiveServerEvent)
-RemoteFunction.OnServerInvoke = receiveServerInvoke
+function server_events.init()
+    ModuleLoader = require(ReplicatedStorage.Shared.ModuleLoader)
 
-MarketplaceService.ProcessReceipt = onProcessReceipt
+    RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")
+    RemoteFunction = ReplicatedStorage:WaitForChild("RemoteFunction")
 
-return 0
+
+    RemoteEvent.OnServerEvent:Connect(receiveServerEvent)
+    RemoteFunction.OnServerInvoke = receiveServerInvoke
+    
+    MarketplaceService.ProcessReceipt = onProcessReceipt
+end
+
+
+return server_events

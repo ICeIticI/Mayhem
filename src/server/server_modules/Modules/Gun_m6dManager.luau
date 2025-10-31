@@ -1,6 +1,6 @@
 local Gun_m6dManager = {}
 
-function Gun_m6dManager.run(plr)
+function Gun_m6dManager.init(plr)
     local char = plr.Character or plr.CharacterAdded:Wait()
     local Motor
     

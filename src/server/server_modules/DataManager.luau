@@ -2,21 +2,26 @@ local DataStoreService
 
 local DataManager = {}
 
+
 local DataStores = {
 
 }
+local playerData -- wanna keep this local because data is super sensitive and confidential info so it should only be known to THIS script
 
-if game.PlaceId ~= 0 then
-    DataStoreService = game:GetService("DataStoreService")
-
-    DataStores = {
-        ["Kills"] = DataStoreService:GetDataStore("Kills_Store"),
-        ["Cash"] = DataStoreService:GetDataStore("Cash_Store"),
-        ["OwnedWeapons"] = DataStoreService:GetDataStore("OwnedWeapons_Store")
-    }
+function DataManager.init()
+    if game.PlaceId ~= 0 then
+        DataStoreService = game:GetService("DataStoreService")
+    
+        DataStores = {
+            ["Kills"] = DataStoreService:GetDataStore("Kills_Store"),
+            ["Cash"] = DataStoreService:GetDataStore("Cash_Store"),
+            ["OwnedWeapons"] = DataStoreService:GetDataStore("OwnedWeapons_Store")
+        }
+    end
+    
+    playerData = {} -- table storing all data for each player in the server retrieved from datastores
 end
 
-local playerData = {} -- table storing all data for each player in the server retrieved from datastores
 
 function DataManager:LoadData(plr) -- Loads player-saved data into the server
     if plr.UserId < 1 then return end

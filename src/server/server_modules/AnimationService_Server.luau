@@ -12,7 +12,7 @@ and execute code accordingly.
 
 ]]
 
-local utilities = require(game.ReplicatedStorage.Shared.utilities)
+local ModuleLoader
 
 local AnimationService_Server = {}
 AnimationService_Server.__index = AnimationService_Server
@@ -23,6 +23,7 @@ local RemoteEvent
 -- run to initialize this service
 function AnimationService_Server.init()
     ReplicatedStorage = game:GetService("ReplicatedStorage")
+    ModuleLoader = require(ReplicatedStorage.Shared.ModuleLoader)
     RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")
 end
 
@@ -53,7 +54,7 @@ function AnimationService_Server.setupAnimations(plr, animations : table)
         animTbl[animation.Name] = AnimationService_Server.newAnimation(plr, animation)
     end
 
-    RemoteEvent:FireClient(plr, "setupAnimations", {animationIds = utilities.getPropertyList(animTbl, "animationId")})
+    RemoteEvent:FireClient(plr, "setupAnimations", {animationIds = ModuleLoader.utilities.getPropertyList(animTbl, "animationId")})
     return animTbl
 end
 

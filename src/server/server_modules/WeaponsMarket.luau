@@ -1,14 +1,22 @@
 local RemoteEvent = game:GetService("ReplicatedStorage"):WaitForChild("RemoteEvent")
-local ServerScriptService = game:GetService("ServerScriptService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local DataManager = require(ServerScriptService.Server.server_modules.DataManager)
-local utilities = require(game.ReplicatedStorage.Shared.utilities)
+local ModuleLoader
 
 local WeaponsMarket = {}
 
-local cashAccounts = {} -- will hold a name for each player or character that holds currency
-local killsAccounts = {} -- stores kills for each shooter in the server
-local gunsAccounts = {} -- Will hold the names of guns the player owns, if they're equipped, attachments they have (when I add them), etc
+local cashAccounts
+local killsAccounts
+local gunsAccounts
+
+function WeaponsMarket.init()
+    ModuleLoader = require(ReplicatedStorage.Shared.ModuleLoader)
+
+    cashAccounts = {} -- will hold a name for each player or character that holds currency
+    killsAccounts = {} -- stores kills for each shooter in the server
+    gunsAccounts = {} -- Will hold the names of guns the player owns, if they're equipped, attachments they have (when I add them), etc
+end
+
 
 function WeaponsMarket:InitiateAccounts(plr)
     killsAccounts[plr.UserId] = Instance.new("NumberValue")
@@ -23,12 +31,12 @@ function WeaponsMarket:InitiateAccounts(plr)
         previousCashAmount = cashAccounts[plr.UserId].Value
     end)
 
-    killsAccounts[plr.UserId].Value = DataManager:GetData(plr, "Kills").Value or 0
-    cashAccounts[plr.UserId].Value = DataManager:GetData(plr, "Cash").Value or 0
-    gunsAccounts[plr.UserId] = DataManager:GetData(plr, "OwnedWeapons")
+    killsAccounts[plr.UserId].Value = ModuleLoader.DataManager:GetData(plr, "Kills").Value or 0
+    cashAccounts[plr.UserId].Value = ModuleLoader.DataManager:GetData(plr, "Cash").Value or 0
+    gunsAccounts[plr.UserId] = ModuleLoader.DataManager:GetData(plr, "OwnedWeapons")
 
     -- new players should start with default weapon, the glock
-    if #utilities.makeTableFromDictionaryValues(gunsAccounts[plr.UserId]) <= 0 then
+    if #ModuleLoader.utilities.makeTableFromDictionaryValues(gunsAccounts[plr.UserId]) <= 0 then
         gunsAccounts[plr.UserId] = {["Glock 17"] = {["name"] = "Glock 17", ["equipped"] = true}}
     end
 
@@ -37,17 +45,17 @@ end
 
 function WeaponsMarket:AwardKill(plr, amount)
     killsAccounts[plr.UserId].Value += amount
-    DataManager:SetData(plr, "Kills", {Value = killsAccounts[plr.UserId].Value})
+    ModuleLoader.DataManager:SetData(plr, "Kills", {Value = killsAccounts[plr.UserId].Value})
 end
 
 function WeaponsMarket:AwardCash(plr, amount)
     cashAccounts[plr.UserId].Value += amount
-    DataManager:SetData(plr, "Cash", {Value = cashAccounts[plr.UserId].Value})
+    ModuleLoader.DataManager:SetData(plr, "Cash", {Value = cashAccounts[plr.UserId].Value})
 end
 
 function WeaponsMarket:SubtractCash(plr, amount)
     cashAccounts[plr.UserId].Value -= amount
-    DataManager:SetData(plr, "Cash", {Value = cashAccounts[plr.UserId].Value})
+    ModuleLoader.DataManager:SetData(plr, "Cash", {Value = cashAccounts[plr.UserId].Value})
 end
 
 function WeaponsMarket:GetKillsAccount(plr)
@@ -73,7 +81,7 @@ end
 
 function WeaponsMarket:AddWeaponToWeaponsAccount(plr, weaponName, equipped)
     if not equipped then
-        utilities.createInstance("StringValue", {Name = weaponName, Parent = plr.unequippedWeapons})
+        ModuleLoader.utilities.createInstance("StringValue", {Name = weaponName, Parent = plr.unequippedWeapons})
     else
         if plr.unequippedWeapons:FindFirstChild(weaponName) then
             plr.unequippedWeapons[weaponName]:Destroy()
@@ -82,7 +90,7 @@ function WeaponsMarket:AddWeaponToWeaponsAccount(plr, weaponName, equipped)
 
     gunsAccounts[plr.UserId][weaponName] = {name = weaponName, equipped = equipped}
     print(gunsAccounts)
-    DataManager:SetData(plr, "OwnedWeapons", gunsAccounts[plr.UserId])
+    ModuleLoader.DataManager:SetData(plr, "OwnedWeapons", gunsAccounts[plr.UserId])
 end
 
 return WeaponsMarket
