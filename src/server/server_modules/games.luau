@@ -133,14 +133,27 @@ function games.getGamePeriod()
 end
 
 function games.spawnCharacter(char)
-    -- Spawn at a random spot on the map. If team deathmatch, make sure to spawn on team SpawnLocation:
-    local spawnPoints = game.Workspace.SpawnPoints:GetChildren()
-    local spawnCFrame = spawnPoints[math.random(1, #spawnPoints)].CFrame
+    
+    warn(games.gamePeriod)
+    local spawnCFrame
+    if games.gamePeriod == "Intermission" or string.find(games.gamePeriod, "Chosen gamemode: ") then
+        -- spawn in lobby:
+
+        char.HumanoidRootPart.Anchored = false
+        spawnCFrame = game:GetService("Workspace").Lobby:WaitForChild("spawnPoint").CFrame
+    else
+        -- Spawn at a random spot on the map. If team deathmatch, make sure to spawn on team SpawnLocation:
+        
+        local spawnPoints = game:GetService("Workspace").SpawnPoints:GetChildren()
+        spawnCFrame = spawnPoints[math.random(1, #spawnPoints)].CFrame
+
+        if games.gamePeriod == "Countdown" or games.gamePeriod == "Ended" then
+            char.HumanoidRootPart.Anchored = true
+        end
+    end
 
     char.HumanoidRootPart.CFrame = spawnCFrame
-    if games.gamePeriod ~= "Ongoing" then
-        char.HumanoidRootPart.Anchored = true
-    end
+
 end
 
 function games.addPlayerToRound(player)
@@ -150,9 +163,9 @@ function games.addPlayerToRound(player)
     games.playerScores[player.UserId] = 0
     print(player.Name .. " has been added to the games!")
 
-    if games.gamePeriod ~= "Ongoing" then
-        player.Character.HumanoidRootPart.Anchored = true
-    end
+    -- if games.gamePeriod ~= "Ongoing" then
+    --     player.Character.HumanoidRootPart.Anchored = true
+    -- end
 end
 
 function games.run()
@@ -174,7 +187,7 @@ function games.run()
     end
 
 
-    -- Gather the players:
+    -- add players to round:
     for _, player in pairs(game.Players:GetPlayers()) do -- currentRoundPlayers gets added as players join the game and press Play
         player.Team = nil
         games.addPlayerToRound(player)
@@ -204,6 +217,15 @@ function games.run()
         task.wait(1)
     end
 
+    games.gamePeriod = "Countdown"
+
+     -- Gather the players:
+    for _, player in pairs(game.Players:GetPlayers()) do -- currentRoundPlayers gets added as players join the game and press Play
+        if player.IsLoaded.Value then
+            games.spawnCharacter(player.Character)
+        end
+    end
+
     -- Ready the gamemode:
     chosenGamemode.run()
 
@@ -212,7 +234,6 @@ function games.run()
     end
 
     -- Countdown until match starts:
-    games.gamePeriod = "Countdown"
     for i = 5, 0, -1 do
         games.countdown.Value = i
         task.wait(1)

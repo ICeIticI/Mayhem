@@ -41,7 +41,7 @@ end)
 local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")
 local camera = workspace.CurrentCamera
 local isHolding = false
-ModuleLoader.ClientVariables.menuMusic = ModuleLoader.utilities.createInstance("Sound", {Name = "menuMusic", SoundId = "rbxassetid://87753640000210", Looped = true, Parent = game:GetService("SoundService")})
+ModuleLoader.ClientVariables.menuMusic = ModuleLoader.utilities.createInstance("Sound", {Name = "menuMusic", SoundId = "rbxassetid://1837808628", Looped = true, Parent = game:GetService("SoundService")})
 
 local PlayScreenFocus = game:GetService("Workspace"):WaitForChild("PlayScreenFocus")
 -- Mirosoft Copilot object-circling code cause idk how to do it:
