@@ -89,10 +89,10 @@ local function startInputToServer(inputTable, gameProcessedEvent) -- sends to th
 end
 
 local function onCharacterAdded(character)
-    ModuleLoader.ClientVariables.camera.CameraSubject = game:GetService("Workspace"):WaitForChild("PlayScreenFocus")
-    ModuleLoader.ClientVariables.camera.CameraType = Enum.CameraType.Orbital
-    ModuleLoader.ClientVariables.Gun_GUI:WaitForChild("PlayButton").Visible = true
-    ModuleLoader.ClientVariables.Gun_GUI.Game_Title.Visible = true
+    -- ModuleLoader.ClientVariables.camera.CameraSubject = game:GetService("Workspace"):WaitForChild("PlayScreenFocus")
+    -- ModuleLoader.ClientVariables.camera.CameraType = Enum.CameraType.Orbital
+    -- ModuleLoader.ClientVariables.Gun_GUI:WaitForChild("PlayButton").Visible = true
+    -- ModuleLoader.ClientVariables.Gun_GUI.Game_Title.Visible = true
     ModuleLoader.ClientVariables.Gun_GUI.ShopButton.Visible = true
     ModuleLoader.ClientVariables.Gun_GUI.Cash_Display.Visible = true
     ModuleLoader.ClientVariables.Gun_GUI.Kills_Display.Visible = true

@@ -27,12 +27,12 @@ ModuleLoader.server_events.init()
 local function onCharacterAdded(char)
 
     char:WaitForChild("Humanoid").JumpHeight = 5
-    char:WaitForChild("HumanoidRootPart").Anchored = true
-    char.HumanoidRootPart.CFrame = game:GetService("Workspace").Pre_Spawn.PrimaryPart.CFrame
+    -- char:WaitForChild("HumanoidRootPart").Anchored = true
+    char.HumanoidRootPart.CFrame = game:GetService("Workspace").Pre_Spawn.center.CFrame
     
     local player = Players:GetPlayerFromCharacter(char)
     player.CameraMode = Enum.CameraMode.Classic
-    player.IsLoaded.Value = false
+    -- player.IsLoaded.Value = false
 
     ModuleLoader.Gun_m6dManager.init(player)
 
@@ -47,8 +47,7 @@ local function onCharacterAdded(char)
 
     local diedConnect
     diedConnect = char.Humanoid.Died:Connect(function()
-        print(player.IsLoaded.Value)
-        player.IsLoaded.Value = false
+        -- player.IsLoaded.Value = false
         diedConnect:Disconnect()
     end)
 

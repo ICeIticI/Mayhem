@@ -178,9 +178,9 @@ function games.run()
     for _, player in pairs(game.Players:GetPlayers()) do -- currentRoundPlayers gets added as players join the game and press Play
         player.Team = nil
         games.addPlayerToRound(player)
-        if player.IsLoaded.Value then
-            games.spawnCharacter(player.Character)
-        end
+        -- if player.IsLoaded.Value then
+        games.spawnCharacter(player.Character)
+        -- end
     end
 
 
@@ -223,10 +223,10 @@ function games.run()
     if games.gamePeriod == "Countdown" then
         -- Let the games begin!
         warn("Let the games begin!")
-        for _, player in pairs(games.currentRoundPlayers) do
-            if not player.IsLoaded then continue end
-            player.Character.HumanoidRootPart.Anchored = false
-        end
+        -- for _, player in pairs(games.currentRoundPlayers) do
+        --     if not player.IsLoaded then continue end
+        --     player.Character.HumanoidRootPart.Anchored = false
+        -- end
         games.gamePeriod = "Ongoing"
     
     

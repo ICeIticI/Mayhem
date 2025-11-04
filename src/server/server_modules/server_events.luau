@@ -13,7 +13,7 @@ local RemoteFunction
 local function receiveServerEvent(plr, protocol, data)
 
     if protocol == "play" then
-        if plr.IsLoaded.Value then return end -- character should not exist when the play button is pressed
+        -- if plr.IsLoaded.Value then return end -- character should not exist when the play button is pressed
         
         if game.PlaceId > 0 then -- we dont wanna force lock in studio for testing stuff
             plr.CameraMode = Enum.CameraMode.LockFirstPerson
@@ -24,7 +24,7 @@ local function receiveServerEvent(plr, protocol, data)
         ModuleLoader.utilities.filterCharacterObjects(plr.Character, {["Accessory"] = true})
         
         plr.Character.HumanoidRootPart.Anchored = false
-        plr.IsLoaded.Value = true
+        -- plr.IsLoaded.Value = true
         if ModuleLoader.games.getGamePeriod() == "Ongoing" then
             ModuleLoader.games.addPlayerToRound(plr)
         end
@@ -42,8 +42,7 @@ local function receiveServerEvent(plr, protocol, data)
 
     if protocol == "inputStarted" then
 
-        print(plr.IsLoaded.Value)
-        if not plr.IsLoaded.Value then return end
+        -- if not plr.IsLoaded.Value then return end
 
         if inputType == "ShootInputs" then
             plrGun:Fire(data.ray)

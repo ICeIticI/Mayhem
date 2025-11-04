@@ -719,10 +719,10 @@ end
 -- end
 
 function Gun:Equip()
-	if self.plr and not self.plr.IsLoaded.Value then
-		self.tool.Parent = self.plr.Backpack
-		return
-	end
+	-- if self.plr and not self.plr.IsLoaded.Value then
+	-- 	self.tool.Parent = self.plr.Backpack
+	-- 	return
+	-- end
 
 	self.Gun_Sounds.Equip:Play()
 	self.isEquipped = true
