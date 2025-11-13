@@ -29,13 +29,12 @@ end
 local ModuleLoader = require(ReplicatedStorage.Shared.ModuleLoader)
 ModuleLoader.init()
 
-ModuleLoader.Seasonal.init()
 ModuleLoader.ClientVariables.init()
-ModuleLoader.invite_friends.init()
-ModuleLoader.client_events.init()
-ModuleLoader.shopManager.init()
 task.spawn(function()
-    ModuleLoader.move_arms.init()
+    ModuleLoader.Seasonal.init()
+    ModuleLoader.invite_friends.init()
+    ModuleLoader.client_events.init()
+    ModuleLoader.shopManager.init()
 end)
 
 local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")
@@ -43,7 +42,19 @@ local camera = workspace.CurrentCamera
 local isHolding = false
 ModuleLoader.ClientVariables.menuMusic = ModuleLoader.utilities.createInstance("Sound", {Name = "menuMusic", SoundId = "rbxassetid://87753640000210", Looped = true, Parent = game:GetService("SoundService")})
 
-local PlayScreenFocus = game:GetService("Workspace"):WaitForChild("PlayScreenFocus")
+-- playScreenFocus is where the camera will move around the map on first join
+local PlayScreenFocus = Instance.new("Part")
+PlayScreenFocus.Name = "PlayScreenFocus"
+PlayScreenFocus.Anchored = true
+PlayScreenFocus.Transparency = 1
+PlayScreenFocus.CastShadow = false
+PlayScreenFocus.EnableFluidForces = false
+PlayScreenFocus.CanCollide = false
+PlayScreenFocus.CanQuery = false
+PlayScreenFocus.CanTouch = false
+PlayScreenFocus.CFrame = CFrame.new(0,50,0)
+PlayScreenFocus.Parent = Workspace
+
 -- Mirosoft Copilot object-circling code cause idk how to do it:
 
 local center = PlayScreenFocus.Position -- center of the circle
@@ -58,7 +69,10 @@ RunService.Heartbeat:Connect(function(dt)
 	PlayScreenFocus.Position = center + Vector3.new(x, 0, z)
 end)
 
-
+ModuleLoader.ClientVariables.camera.CameraSubject = game:GetService("Workspace"):WaitForChild("PlayScreenFocus")
+ModuleLoader.ClientVariables.camera.CameraType = Enum.CameraType.Orbital
+ModuleLoader.ClientVariables.Gun_GUI:WaitForChild("PlayButton").Visible = true
+ModuleLoader.ClientVariables.Gun_GUI.Game_Title.Visible = true
 
 -- Change UI parent based on if the gun is equipped or not:
 
@@ -67,7 +81,7 @@ local function onChildChanged(child)
         if child.Parent == ModuleLoader.ClientVariables.player.Backpack or child.Parent == ModuleLoader.ClientVariables.player.Character then
             -- equipped weapon
             ModuleLoader.ClientVariables.gunTool = child
-            ModuleLoader.shopManager.buttons[child.Name]:SwapParents(true)
+            -- ModuleLoader.shopManager.buttons[child.Name]:SwapParents(true)
 
             if child.Parent == ModuleLoader.ClientVariables.player.Character and ModuleLoader.ClientVariables.player.Character.Parent then
                 ModuleLoader.move_arms.activate()
@@ -75,8 +89,8 @@ local function onChildChanged(child)
                 ModuleLoader.move_arms.deactivate()
             end
         else
-            warn("Unequip")
-            ModuleLoader.shopManager.buttons[child.Name]:SwapParents(false)
+            -- warn("Unequip")
+            -- ModuleLoader.shopManager.buttons[child.Name]:SwapParents(false)
         end
     end
 end
@@ -89,6 +103,12 @@ local function startInputToServer(inputTable, gameProcessedEvent) -- sends to th
 end
 
 local function onCharacterAdded(character)
+
+    ModuleLoader.move_arms.init()
+
+    ModuleLoader.ClientVariables.camera.CameraSubject = ModuleLoader.ClientVariables.player.Character:WaitForChild("Humanoid")
+    ModuleLoader.ClientVariables.camera.CameraType = Enum.CameraType.Custom
+
     -- ModuleLoader.ClientVariables.camera.CameraSubject = game:GetService("Workspace"):WaitForChild("PlayScreenFocus")
     -- ModuleLoader.ClientVariables.camera.CameraType = Enum.CameraType.Orbital
     -- ModuleLoader.ClientVariables.Gun_GUI:WaitForChild("PlayButton").Visible = true
@@ -119,9 +139,9 @@ local function onCharacterAdded(character)
     end)
 end
 
-if ModuleLoader.ClientVariables.player.Character then
-    onCharacterAdded(ModuleLoader.ClientVariables.player.Character)
-end
+-- if ModuleLoader.ClientVariables.player.Character then
+--     onCharacterAdded(ModuleLoader.ClientVariables.player.Character)
+-- end
 ModuleLoader.ClientVariables.player.CharacterAdded:Connect(function(character)
     onCharacterAdded(character)
 end)
@@ -137,7 +157,14 @@ UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
     if gameProcessedEvent then return end
     
     if inputType == "ShootInputs" then
-        if ModuleLoader.ClientVariables.gunTool and (not ModuleLoader.ClientVariables.gunTool:WaitForChild("Values"):WaitForChild("shootDebounce").Value or not ModuleLoader.ClientVariables.gunTool.Values.IsFullAuto.Value) and ModuleLoader.ClientVariables.gunTool.Activated then
+        if ModuleLoader.ClientVariables.gunTool and ModuleLoader.ClientVariables.gunTool:FindFirstChild("Values") and 
+        (
+            not ModuleLoader.ClientVariables.gunTool:WaitForChild("Values"):WaitForChild("shootDebounce").Value 
+            or not ModuleLoader.ClientVariables.gunTool.Values.IsFullAuto.Value
+        ) 
+        and ModuleLoader.ClientVariables.gunTool.Activated 
+        then
+            
             isHolding = true
             if ModuleLoader.ClientVariables.gunTool.Values.IsFullAuto.Value then
                 while isHolding and ModuleLoader.ClientVariables.gunTool.Equipped do
@@ -147,6 +174,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
             else
                 startInputToServer(inputTable, gameProcessedEvent)
             end
+            
         end
     else
         RemoteEvent:FireServer("inputStarted", {input = inputTable, gameProcessedEvent = gameProcessedEvent})
@@ -174,8 +202,6 @@ ModuleLoader.ClientVariables.Gun_GUI.PlayButton.Visible = true
 ModuleLoader.ClientVariables.Gun_GUI.Game_Title.Visible = true
 
 ModuleLoader.ClientVariables.Gun_GUI.PlayButton.Activated:Connect(function()
-    ModuleLoader.ClientVariables.camera.CameraSubject = ModuleLoader.ClientVariables.player.Character:WaitForChild("Humanoid")
-    ModuleLoader.ClientVariables.camera.CameraType = Enum.CameraType.Custom
     
     ModuleLoader.ClientVariables.Gun_GUI.PlayButton.Visible = false
     ModuleLoader.ClientVariables.Gun_GUI.Game_Title.Visible = false
