@@ -97,7 +97,6 @@ function Utilities.filterCharacterObjects(char, objectNamesTable) -- disables ch
             accessoryPart.EnableFluidForces = false
         end
     end
-    print("We runnn hahaha")
 end
 
 function Utilities.makeAnimationTracksFromAnimations(animationsTable, animator) -- animationsTable accepts both Animation instances and AnimationIds

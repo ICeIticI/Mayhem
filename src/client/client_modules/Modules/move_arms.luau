@@ -23,9 +23,20 @@ end
 function move_arms.activate()
     
     if move_arms.event then move_arms.event:Disconnect() end
-    local torso = ModuleLoader.ClientVariables.player.Character:WaitForChild("Torso")
+
     move_arms.event = RunService.RenderStepped:Connect(function() -- runs every frame
-        if ModuleLoader.ClientVariables.player.Character.Humanoid.Health <= 0 then move_arms.deactivate() end
+        local torso = ModuleLoader.ClientVariables.player.Character:FindFirstChild("Torso")
+
+        if not torso or (
+            ModuleLoader.ClientVariables.player.Character 
+            and ModuleLoader.ClientVariables.player.Character:FindFirstChild("Humanoid")
+            and ModuleLoader.ClientVariables.player.Character.Humanoid.Health <= 0
+        )
+        then 
+            move_arms.deactivate()
+            return
+        end
+        
         move_arms.eventPlaying = true
         local screenCenter = game.Workspace.CurrentCamera.ViewportSize / 2
         ModuleLoader.ClientVariables.ray = game.Workspace.CurrentCamera:ViewportPointToRay(screenCenter.X, screenCenter.Y)
@@ -52,8 +63,11 @@ function move_arms.activate()
 end
 
 function move_arms.deactivate()
-    local torso = ModuleLoader.ClientVariables.player.Character:WaitForChild("Torso")
+    local torso = ModuleLoader.ClientVariables.player.Character:FindFirstChild("Torso")
+    
     if move_arms.event then move_arms.event:Disconnect() end
+    if not torso then return end
+
     while move_arms.eventPlaying do task.wait() end
     task.wait(0.1)
 
