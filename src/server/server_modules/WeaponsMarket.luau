@@ -40,10 +40,6 @@ function WeaponsMarket:InitiateAccounts(plr)
         gunsAccounts[plr.UserId] = {["Glock 17"] = {["name"] = "Glock 17", ["equipped"] = true}}
     end
 
-    for _, gun in pairs(gunsAccounts[plr.UserId]) do
-        ModuleLoader.utilities.createInstance("BoolValue", {Name = gun.name, Parent = plr.ownedWeapons})
-    end
-
     print(gunsAccounts)
 end
 
@@ -84,6 +80,14 @@ function WeaponsMarket:GetEquippedWeaponName(plr)
 end
 
 function WeaponsMarket:AddWeaponToWeaponsAccount(plr, weaponName, equipped)
+    if not equipped then
+        ModuleLoader.utilities.createInstance("StringValue", {Name = weaponName, Parent = plr.unequippedWeapons})
+    else
+        if plr.unequippedWeapons:FindFirstChild(weaponName) then
+            plr.unequippedWeapons[weaponName]:Destroy()
+        end
+    end
+
     gunsAccounts[plr.UserId][weaponName] = {name = weaponName, equipped = equipped}
     print(gunsAccounts)
     ModuleLoader.DataManager:SetData(plr, "OwnedWeapons", gunsAccounts[plr.UserId])

@@ -13,8 +13,22 @@ local RemoteFunction
 local function receiveServerEvent(plr, protocol, data)
 
     if protocol == "play" then
-        plr.IsLoaded.Value = true
-        plr:LoadCharacter()
+        -- if plr.IsLoaded.Value then return end -- character should not exist when the play button is pressed
+        
+        if game.PlaceId > 0 then -- we dont wanna force lock in studio for testing stuff
+            plr.CameraMode = Enum.CameraMode.LockFirstPerson
+        end
+
+        print("Hey")
+        -- make sure bullets cant collide with accessories
+        ModuleLoader.utilities.filterCharacterObjects(plr.Character, {["Accessory"] = true})
+        
+        plr.Character.HumanoidRootPart.Anchored = false
+        -- plr.IsLoaded.Value = true
+        if ModuleLoader.games.getGamePeriod() == "Ongoing" then
+            ModuleLoader.games.addPlayerToRound(plr)
+        end
+        ModuleLoader.games.spawnCharacter(plr.Character)
         return
     end
 
@@ -46,11 +60,8 @@ local function receiveServerEvent(plr, protocol, data)
 
     elseif protocol == "move_arms" then
         -- if plrGun.tool.Equipped then
-            local torso = plr.Character:FindFirstChild("Torso")
-            if not torso then return end
-
-            torso:WaitForChild("Right Shoulder").C0 = data.RightC0
-            torso:WaitForChild("Left Shoulder").C0 = data.LeftC0
+            plr.Character:WaitForChild("Torso"):WaitForChild("Right Shoulder").C0 = data.RightC0
+            plr.Character:WaitForChild("Torso"):WaitForChild("Left Shoulder").C0 = data.LeftC0
         -- end
     end
 end
@@ -71,28 +82,24 @@ local function receiveServerInvoke(plr, protocol, data)
             -- Checks if the desired weapon is equipped:
             local equippedWeapon = ModuleLoader.utilities.FindChildByNameWhichIsA(plr.Backpack, data.name, "Tool") or ModuleLoader.utilities.FindChildByNameWhichIsA(plr.Character, data.name, "Tool")
             
-            print(ownedWeapons[data.name], plrGun)
             if ownedWeapons[data.name] and ownedWeapons[data.name].equipped then -- The weapon is equipped already
                 
                 if plrGun and plrGun.name then
+                    ModuleLoader.WeaponsMarket:AddWeaponToWeaponsAccount(plr, plrGun.name, false)
                     plrGun:Remove()
                 end
-                ModuleLoader.WeaponsMarket:AddWeaponToWeaponsAccount(plr, config.name, false)
-                return false
 
             elseif ownedWeapons[data.name] and not ownedWeapons[data.name].equipped then -- The weapon is unequipped
 
-                -- -- For now we only allow one weapon to be equipped, which is intended to be changed later:
-                -- if plrGun and plrGun.name then -- unequips current weapon:
-                -- ModuleLoader.WeaponsMarket:AddWeaponToWeaponsAccount(plr, plrGun.name, false)
-                -- plrGun:Remove()
-                -- end
+                -- For now we only allow one weapon to be equipped, which is intended to be changed later:
+                if plrGun and plrGun.name then -- unequips current weapon:
+                    ModuleLoader.WeaponsMarket:AddWeaponToWeaponsAccount(plr, plrGun.name, false)
+                    plrGun:Remove()
+                end
             
-                -- plrGun = ModuleLoader.Gun.new(plr.Character, config)
-                -- plrGun.tool.Parent = plr.Backpack
-                ModuleLoader.WeaponsMarket:AddWeaponToWeaponsAccount(plr, config.name, true)
-
-                return true
+                plrGun = ModuleLoader.Gun.new(plr.Character, config)
+                plrGun.tool.Parent = plr.Backpack
+                ModuleLoader.WeaponsMarket:AddWeaponToWeaponsAccount(plr, plrGun.name, true)
 
             else -- The weapon isn't owned yet
                 -- make sure they have enough moneys and enough kills:

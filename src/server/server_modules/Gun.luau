@@ -692,7 +692,7 @@ function Gun:Sprint()
 		-- Drain:
 		while self.isSprintPressed and self.currentSprintStamina.Value > 0 do
 			task.wait(0.1)
-			if self.shooter:WaitForChild("Humanoid").MoveDirection.Magnitude == 0 then 
+			if self.shooter.Humanoid.MoveDirection.Magnitude == 0 then 
 				if self.currentSprintStamina.Value >= self.sprintStamina.Value then continue end
 
 				self.currentSprintStamina.Value += 1

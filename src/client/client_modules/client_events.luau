@@ -109,19 +109,6 @@ local function receiveClientEvent(protocol, data)
 
 	elseif protocol == "revealJuggernaut" then
 		ModuleLoader.ClientVariables.revealGUI.Parent = Players:FindFirstChild(data.chosenBeastName).Character:WaitForChild("Head")
-
-	elseif protocol == "updateVotes" then
-		for _, v in pairs(ModuleLoader.ClientVariables.votingStations:GetDescendants()) do
-			if not v:IsA("Frame") then continue end
-			-- deal with the children of the frame:
-
-			print("He")
-			local specificOption = v:FindFirstAncestorWhichIsA("Model"):GetAttribute("optionName")
-			local specificStationId = v:FindFirstAncestorWhichIsA("Model"):GetAttribute("id")
-
-			v.optionName.Text = specificOption
-			v.voteCount.Text = #data.votingOptions[specificStationId]
-		end
 	end
 end
 

@@ -2,8 +2,6 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local BadgeService = game:GetService("BadgeService")
 
-Players.CharacterAutoLoads = false
-
 local RemoteEvent = Instance.new("RemoteEvent")
 RemoteEvent.Name = "RemoteEvent"
 RemoteEvent.Parent = ReplicatedStorage
@@ -24,61 +22,39 @@ ModuleLoader.Gun.init()
 ModuleLoader.DataManager.init()
 ModuleLoader.WeaponsMarket.init()
 ModuleLoader.games.init()
-ModuleLoader.votingSystem.init()
 ModuleLoader.server_events.init()
 
 local function onCharacterAdded(char)
 
     char:WaitForChild("Humanoid").JumpHeight = 5
-    
     -- char:WaitForChild("HumanoidRootPart").Anchored = true
     char.HumanoidRootPart.CFrame = game:GetService("Workspace").Pre_Spawn.center.CFrame
     
     local player = Players:GetPlayerFromCharacter(char)
-    if not player then return end
+    player.CameraMode = Enum.CameraMode.Classic
+    -- player.IsLoaded.Value = false
 
-    print(ModuleLoader.games.getGamePeriod())
-    if ModuleLoader.games.getGamePeriod() ~= "Ongoing" and ModuleLoader.games.getGamePeriod() ~= "Countdown" and not string.match(ModuleLoader.games.getGamePeriod(), "Chosen gamemode:") then
-        player.CameraMode = Enum.CameraMode.Classic
-        player.Character.HumanoidRootPart.Anchored = false
-    else
-        player.CameraMode = Enum.CameraMode.LockFirstPerson
-        ModuleLoader.games.addPlayerToRound(player)
-        ModuleLoader.games.spawnCharacter(player)
+    ModuleLoader.Gun_m6dManager.init(player)
 
-        ModuleLoader.Gun_m6dManager.init(player)
-    
-        for _, weaponData in pairs(ModuleLoader.WeaponsMarket:GetWeaponsAccount(player)) do
-            if weaponData.equipped then
-                local newGun = ModuleLoader.Gun.new(player.Character, ModuleLoader.Gun.gunPresets[weaponData.name .. "_Preset"])
-                newGun.tool.Parent = player.Backpack
-            -- else
-            --     ModuleLoader.utilities.createInstance("StringValue", {Name = weaponData.name, Parent = player.ownedWeapons})
-            end
+    for _, weaponData in pairs(ModuleLoader.WeaponsMarket:GetWeaponsAccount(player)) do
+        if weaponData.equipped then
+            local newGun = ModuleLoader.Gun.new(player.Character, ModuleLoader.Gun.gunPresets[weaponData.name .. "_Preset"])
+            newGun.tool.Parent = player.Backpack
+        else
+            ModuleLoader.utilities.createInstance("StringValue", {Name = weaponData.name, Parent = player.unequippedWeapons})
         end
-
-        -- make sure bullets cant collide with accessories
-        ModuleLoader.utilities.filterCharacterObjects(player.Character, {["Accessory"] = true})
-
     end
 
-    -- if plr.IsLoaded.Value then return end -- character should not exist when the play button is pressed
-    
-    -- ModuleLoader.games.spawnCharacter(plr)
-
     local diedConnect
-    diedConnect = char:WaitForChild("Humanoid").Died:Connect(function()
+    diedConnect = char.Humanoid.Died:Connect(function()
         -- player.IsLoaded.Value = false
-        task.delay(5, function()
-            player:LoadCharacter()
-        end)
         diedConnect:Disconnect()
     end)
 
+    RemoteEvent:FireClient(player, "readyToInitButtons")
 end
 
 local function onPlayerAdded(player)
-    player:LoadCharacter()
     
     -- Halloween 2025 badge:
     local currentMonth = tonumber(os.date("%m"))
@@ -90,20 +66,16 @@ local function onPlayerAdded(player)
     end
 
     -- utilities.createInstance("Folder", {Name = "equippedWeapons", Parent = player})
-    ModuleLoader.utilities.createInstance("Folder", {Name = "ownedWeapons", Parent = player})
+    ModuleLoader.utilities.createInstance("Folder", {Name = "unequippedWeapons", Parent = player})
     ModuleLoader.utilities.createInstance("BoolValue", {Name = "IsLoaded", Value = false, Parent = player})
 
     ModuleLoader.DataManager:LoadData(player)
     ModuleLoader.WeaponsMarket:InitiateAccounts(player)
 
-    player.Character:Destroy()
-    -- if player.Character then
-    --     onCharacterAdded(player.Character)
-    -- end
+    if player.Character then
+        onCharacterAdded(player.Character)
+    end
     player.CharacterAdded:Connect(onCharacterAdded)
-
-    -- task.wait(1)
-    RemoteEvent:FireClient(player, "readyToInitButtons")
     
 end
 
@@ -124,10 +96,7 @@ game:BindToClose(function()
 end)
 
 while true do
-    task.wait()
-    local success, result = pcall(function()
+    pcall(function()
         ModuleLoader.games.run()
     end)
-
-    if not success then warn(result) end
 end

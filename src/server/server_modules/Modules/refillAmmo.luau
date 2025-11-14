@@ -8,15 +8,11 @@ function refillAmmo.init()
     local ammoBoxes = Workspace:WaitForChild("ammoBoxes")
     
     for _, ammoBox in pairs(ammoBoxes:GetChildren()) do
-        
+    
         local box = ammoBox.Box
-        local lid = ammoBox.Lid
         local prompt = box.reloadProx
         local lootSFX = box.lootSFX
         
-        local ammoRestockGUI = ReplicatedStorage:WaitForChild("ammoRestockGUI"):Clone()
-        ammoRestockGUI.Parent = lid
-
         local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")
         local Gun = require(ServerScriptService.Server.server_modules.Gun)
         
