@@ -73,7 +73,7 @@ end
 
     button.instance.Activated:Connect(function()
 
-        if ModuleLoader.ClientVariables.player.unequippedWeapons:FindFirstChild(button.item.Name) then
+        if ModuleLoader.ClientVariables.player.ownedWeapons:FindFirstChild(button.item.Name) then
             -- weapon is currently unequipped
             shopManager.equipPurchase_screen.purchaseWithRobuxFrame.Visible = false
             shopManager.equipPurchase_screen.TextLabel.Text = "Equip?"
@@ -99,9 +99,10 @@ end
     button.item.Parent = button.instance.ViewportFrame
     
     -- if the gun is already equipped, put it in equipped section. If not, then unequipped section:
-    if (ModuleLoader.ClientVariables.gunTool and ModuleLoader.ClientVariables.gunTool.Name == button.item.Name and (ModuleLoader.utilities.FindChildByNameWhichIsA(ModuleLoader.ClientVariables.player.Backpack, ModuleLoader.ClientVariables.gunTool.Name, "Tool"))) then
+    local gunToolBool = ModuleLoader.ClientVariables.player.ownedWeapons:FindFirstChild(button.item.Name)
+    if gunToolBool and gunToolBool.Value then
         button:SwapParents(true)
-    else
+    elseif gunToolBool then
         button:SwapParents(false)
     end
     
@@ -156,7 +157,7 @@ function shopManager.init()
         for _, weapon in pairs(game:GetService("ReplicatedStorage").GunToolPresets:GetChildren()) do
             if weapon:IsA("Tool") then
                 local isLocked
-                if (ModuleLoader.ClientVariables.player.unequippedWeapons:FindFirstChild(weapon.Name)) or (ModuleLoader.ClientVariables.gunTool and ModuleLoader.ClientVariables.gunTool.Name == weapon.Name and (ModuleLoader.utilities.FindChildByNameWhichIsA(ModuleLoader.ClientVariables.player.Backpack, ModuleLoader.ClientVariables.gunTool.Name, "Tool"))) then
+                if (ModuleLoader.ClientVariables.player.ownedWeapons:FindFirstChild(weapon.Name)) or (ModuleLoader.ClientVariables.gunTool and ModuleLoader.ClientVariables.gunTool.Name == weapon.Name and (ModuleLoader.utilities.FindChildByNameWhichIsA(ModuleLoader.ClientVariables.player.Backpack, ModuleLoader.ClientVariables.gunTool.Name, "Tool"))) then
                     -- we own the weapon. Dont add the lock image
                     isLocked = false
                 else
@@ -185,7 +186,8 @@ function shopManager.init()
             return
         end
     
-        if getItem ~= true and getItem ~= "purchased" then
+        print(getItem)
+        if getItem ~= true and getItem ~= false and getItem ~= "purchased" then
             shopManager.currentlySelectedButton:MissingRequiredToPurchase(getItem, amountMissingForPurchase)
             shopManager.promptToPurchaseWithRobux = true
             return 
@@ -193,7 +195,8 @@ function shopManager.init()
     
         if getItem ~= "purchased" then -- we dont want to switch button parents on purchase, only on equip/unequip.
             -- changes button parent to either equipped selection or unequipped:
-            -- currentlySelectedButton:SwapParents()
+            warn(getItem)
+            shopManager.currentlySelectedButton:SwapParents(getItem)
     
             ModuleLoader.ClientVariables.gunTool = ModuleLoader.utilities.FindChildByAttributes(ModuleLoader.ClientVariables.player.Backpack, {Gun = true})
             shopManager.equipPurchase_screen.Visible = false

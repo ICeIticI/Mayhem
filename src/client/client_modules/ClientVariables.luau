@@ -3,9 +3,11 @@ local ClientVariables = {}
 function ClientVariables.init()
     ClientVariables.player = game:GetService("Players").LocalPlayer
     ClientVariables.camera = game:GetService("Workspace").CurrentCamera
-    
+
     ClientVariables.Gun_GUI = ClientVariables.player.PlayerGui:WaitForChild("ScreenGui")
     ClientVariables.Main_Display = ClientVariables.Gun_GUI:WaitForChild("Ammo_Display")
+
+    ClientVariables.votingStations = game:GetService("Workspace"):WaitForChild("votingStations")
     
     ClientVariables.gunCursor = "rbxasset://textures/GunCursor.png"
     ClientVariables.reloadingCursor = "rbxasset://textures/GunWaitCursor.png"
