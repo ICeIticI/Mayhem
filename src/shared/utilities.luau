@@ -81,22 +81,32 @@ function Utilities.createInstance(instanceName: string, properties : dictionary)
     return newInstance
 end
 
+function Utilities.filterObject(child, objectNamesTable)
+    if objectNamesTable[child.ClassName] then -- its one of our filters. Disable!
+        warn(child.Name, child.ClassName)
+        local accessoryPart = child:FindFirstChildWhichIsA("Part")
+        accessoryPart.CanCollide = false
+        accessoryPart.CanTouch = false
+        accessoryPart.CanQuery = false
+        accessoryPart.EnableFluidForces = false
+    end
+end
+
 function Utilities.filterCharacterObjects(char, objectNamesTable) -- disables character objects that have a matching name to the objectNamesTable indexes, turns off CanTouch, CanQuery, etc.
     
-    -- Ensure character is loaded before we filter out accessories:
-    char:WaitForChild("Humanoid")
-    char:WaitForChild("HumanoidRootPart")
+    -- since accessories load later we'll just wait for children to be added
+    char.ChildAdded:Connect(function(child)
+        Utilities.filterObject(child, objectNamesTable)
+    end)
 
+    -- -- Ensure character is loaded before we filter out accessories:
+    -- char:WaitForChild("Humanoid")
+    -- char:WaitForChild("HumanoidRootPart")
+    
     for _, child in pairs(char:GetDescendants()) do
-        if objectNamesTable[child.ClassName] then -- its one of our filters. Disable!
-            print(child.Name, child.ClassName)
-            local accessoryPart = child:FindFirstChildWhichIsA("Part")
-            accessoryPart.CanCollide = false
-            accessoryPart.CanTouch = false
-            accessoryPart.CanQuery = false
-            accessoryPart.EnableFluidForces = false
-        end
+        Utilities.filterObject(child, objectNamesTable)
     end
+
 end
 
 function Utilities.makeAnimationTracksFromAnimations(animationsTable, animator) -- animationsTable accepts both Animation instances and AnimationIds

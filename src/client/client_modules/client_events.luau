@@ -115,7 +115,6 @@ local function receiveClientEvent(protocol, data)
 			if not v:IsA("Frame") then continue end
 			-- deal with the children of the frame:
 
-			print("He")
 			local specificOption = v:FindFirstAncestorWhichIsA("Model"):GetAttribute("optionName")
 			local specificStationId = v:FindFirstAncestorWhichIsA("Model"):GetAttribute("id")
 
@@ -124,7 +123,6 @@ local function receiveClientEvent(protocol, data)
 		end
 
 	elseif protocol == "hideSideUI" then
-		print("cj")
 		ModuleLoader.ClientVariables.Gun_GUI.ShopButton.Visible = false
 		ModuleLoader.ClientVariables.Gun_GUI.shop_frame.Visible = false
 		ModuleLoader.ClientVariables.Gun_GUI.Cash_Display.Visible = false

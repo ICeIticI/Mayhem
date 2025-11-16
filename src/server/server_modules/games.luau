@@ -96,8 +96,9 @@ function games.init()
     
                 local diedConnect
                 diedConnect = chosenBeast.CharacterRemoving:Connect(function()
+                    warn("Tracking beast and hes dead lol", chosenBeast)
                     for _, plr in pairs(currentRoundPlayers_TableVersion) do
-                        if plr ~= chosenBeast then
+                        if plr ~= chosenBeast and not table.find(games.winnerIdsTable, plr.UserId) then
                             table.insert(games.winnerIdsTable, plr.UserId)
                         end
                     end
@@ -108,7 +109,7 @@ function games.init()
                 -- disconnect tracking kills after the round ends:
                 local timerTrackerConnect
                 timerTrackerConnect = games.countdown:GetPropertyChangedSignal("Value"):Connect(function()
-                    if games.countdown.Value == 0 and games.gamePeriod == "Ongoing" then
+                    if games.countdown.Value == 0 and (games.gamePeriod == "Ongoing" or games.gamePeriod == "Ended") then
                         diedConnect:Disconnect()
                         timerTrackerConnect:Disconnect()
                     end
@@ -156,6 +157,7 @@ end
 function games.run()
 
     -- Clear old-round data for the new:
+    table.clear(games.winnerIdsTable)
     table.clear(games.currentRoundPlayers)
     table.clear(games.playerScores)
 
@@ -170,10 +172,9 @@ function games.run()
         task.wait(1)
     end
 
-    -- Pick gamemode:
+    -- Pick gamemode based off votes, or randomly select one if none:
     local chosenGamemode
     local chosenGamemodeName = ModuleLoader.votingSystem.finishVoting()
-    warn(chosenGamemodeName)
     if chosenGamemodeName then     
         for _, gamemode in pairs(games.gamemodes) do
             if gamemode.gamemode_name == chosenGamemodeName then
@@ -195,19 +196,18 @@ function games.run()
         player.Team = nil
         games.addPlayerToRound(player)
         
-        print("Hi")
         if player.Character then
             player.Character:Destroy()
+            print(player.Name)
+            task.wait()
         end
         player:LoadCharacter()
-        task.wait()
 
-        print('he')
         RemoteEvent:FireClient(player, "hideSideUI")
     end
 
     -- Restart intermission if not enough players:
-    if game.PlaceId > 0 then -- not concerned about the # of players in studio testing
+    if game:GetService("RunService"):IsStudio() then -- not concerned about the # of players in studio testing
         if ModuleLoader.utilities.getLength(games.currentRoundPlayers) < 2 then
             games.gamePeriod = "Not enough players. Restarting intermission.."
             games.countdown.Value = 3
@@ -289,8 +289,6 @@ function games.run()
     for _, team in pairs(Teams:GetChildren()) do
         team.Parent = ServerStorage.TeamsStorage
     end
-
-    games.winnerIdsTable = {}
 end
 
 return games

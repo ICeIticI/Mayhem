@@ -37,12 +37,14 @@ local function onCharacterAdded(char)
     local player = Players:GetPlayerFromCharacter(char)
     if not player then return end
 
-    print(ModuleLoader.games.getGamePeriod())
     if ModuleLoader.games.getGamePeriod() ~= "Ongoing" and ModuleLoader.games.getGamePeriod() ~= "Countdown" and not string.match(ModuleLoader.games.getGamePeriod(), "Chosen gamemode:") then
         player.CameraMode = Enum.CameraMode.Classic
         player.Character.HumanoidRootPart.Anchored = false
     else
-        player.CameraMode = Enum.CameraMode.LockFirstPerson
+        if not game:GetService("RunService"):IsStudio() then
+            player.CameraMode = Enum.CameraMode.LockFirstPerson
+        end
+        
         ModuleLoader.games.addPlayerToRound(player)
         ModuleLoader.games.spawnCharacter(player)
 
@@ -58,7 +60,7 @@ local function onCharacterAdded(char)
         end
 
         -- make sure bullets cant collide with accessories
-        ModuleLoader.utilities.filterCharacterObjects(player.Character, {["Accessory"] = true})
+        ModuleLoader.utilities.filterCharacterObjects(char, {["Accessory"] = true})
 
     end
 

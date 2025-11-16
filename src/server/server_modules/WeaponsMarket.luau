@@ -43,8 +43,6 @@ function WeaponsMarket:InitiateAccounts(plr)
     for _, gun in pairs(gunsAccounts[plr.UserId]) do
         ModuleLoader.utilities.createInstance("BoolValue", {Name = gun.name, Value = gun.equipped,   Parent = plr.ownedWeapons})
     end
-
-    print(gunsAccounts)
 end
 
 function WeaponsMarket:AwardKill(plr, amount)
