@@ -69,10 +69,19 @@ RunService.Heartbeat:Connect(function(dt)
 	PlayScreenFocus.Position = center + Vector3.new(x, 0, z)
 end)
 
+ModuleLoader.ClientVariables.Gun_GUI.round_leaderboard.Visible = false
+ModuleLoader.ClientVariables.Gun_GUI.ShopButton.Visible = false
+ModuleLoader.ClientVariables.Gun_GUI.shop_frame.Visible = false
+ModuleLoader.ClientVariables.Gun_GUI.Cash_Display.Visible = false
+ModuleLoader.ClientVariables.Gun_GUI.Kills_Display.Visible = false
+
+
 ModuleLoader.ClientVariables.camera.CameraSubject = game:GetService("Workspace"):WaitForChild("PlayScreenFocus")
 ModuleLoader.ClientVariables.camera.CameraType = Enum.CameraType.Orbital
 ModuleLoader.ClientVariables.Gun_GUI:WaitForChild("PlayButton").Visible = true
 ModuleLoader.ClientVariables.Gun_GUI.Game_Title.Visible = true
+
+ModuleLoader.ClientVariables.menuMusic:Play()
 
 -- Change UI parent based on if the gun is equipped or not:
 
@@ -118,8 +127,6 @@ local function onCharacterAdded(character)
     ModuleLoader.ClientVariables.Gun_GUI.Kills_Display.Visible = true
     ModuleLoader.ClientVariables.Gun_GUI.InviteButton.Visible = true
     ModuleLoader.ClientVariables.Gun_GUI.round_leaderboard.Visible = false
-
-    ModuleLoader.ClientVariables.menuMusic:Play()
 
     local onChildAddedConnect, onChildRemovedConnect
     local parent = ModuleLoader.ClientVariables.player.Backpack
@@ -196,10 +203,10 @@ UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
     end
 end)
 
-ModuleLoader.ClientVariables.gunTool = ModuleLoader.utilities.FindChildByAttributes(ModuleLoader.ClientVariables.player.Backpack, {Gun = true})
+-- ModuleLoader.ClientVariables.gunTool = ModuleLoader.utilities.FindChildByAttributes(ModuleLoader.ClientVariables.player.Backpack, {Gun = true})
 
-ModuleLoader.ClientVariables.Gun_GUI.PlayButton.Visible = true
-ModuleLoader.ClientVariables.Gun_GUI.Game_Title.Visible = true
+-- ModuleLoader.ClientVariables.Gun_GUI.PlayButton.Visible = true
+-- ModuleLoader.ClientVariables.Gun_GUI.Game_Title.Visible = true
 
 ModuleLoader.ClientVariables.Gun_GUI.PlayButton.Activated:Connect(function()
     

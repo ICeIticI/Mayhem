@@ -201,6 +201,9 @@ function games.run()
         end
         player:LoadCharacter()
         task.wait()
+
+        print('he')
+        RemoteEvent:FireClient(player, "hideSideUI")
     end
 
     -- Restart intermission if not enough players:
@@ -240,6 +243,7 @@ function games.run()
     if games.gamePeriod == "Countdown" then
         -- Let the games begin!
         warn("Let the games begin!")
+        
         for _, player in pairs(games.currentRoundPlayers) do
             if not player.IsLoaded then continue end
             player.Character.HumanoidRootPart.Anchored = false

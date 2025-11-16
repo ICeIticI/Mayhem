@@ -122,6 +122,14 @@ local function receiveClientEvent(protocol, data)
 			v.optionName.Text = specificOption
 			v.voteCount.Text = #data.votingOptions[specificStationId]
 		end
+
+	elseif protocol == "hideSideUI" then
+		print("cj")
+		ModuleLoader.ClientVariables.Gun_GUI.ShopButton.Visible = false
+		ModuleLoader.ClientVariables.Gun_GUI.shop_frame.Visible = false
+		ModuleLoader.ClientVariables.Gun_GUI.Cash_Display.Visible = false
+		ModuleLoader.ClientVariables.Gun_GUI.Kills_Display.Visible = false
+
 	end
 end
 

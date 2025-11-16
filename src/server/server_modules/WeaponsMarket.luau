@@ -41,7 +41,7 @@ function WeaponsMarket:InitiateAccounts(plr)
     end
 
     for _, gun in pairs(gunsAccounts[plr.UserId]) do
-        ModuleLoader.utilities.createInstance("BoolValue", {Name = gun.name, Parent = plr.ownedWeapons})
+        ModuleLoader.utilities.createInstance("BoolValue", {Name = gun.name, Value = gun.equipped,   Parent = plr.ownedWeapons})
     end
 
     print(gunsAccounts)
@@ -85,6 +85,12 @@ end
 
 function WeaponsMarket:AddWeaponToWeaponsAccount(plr, weaponName, equipped)
     gunsAccounts[plr.UserId][weaponName] = {name = weaponName, equipped = equipped}
+    
+    if not plr.ownedWeapons:FindFirstChild(gunsAccounts[plr.UserId][weaponName].name) then
+        ModuleLoader.utilities.createInstance("BoolValue", {Name = gunsAccounts[plr.UserId][weaponName].name, Value = gunsAccounts[plr.UserId][weaponName].equipped, Parent = plr.ownedWeapons})
+    end
+    plr.ownedWeapons:FindFirstChild(gunsAccounts[plr.UserId][weaponName].name).Value = equipped
+    
     print(gunsAccounts)
     ModuleLoader.DataManager:SetData(plr, "OwnedWeapons", gunsAccounts[plr.UserId])
 end

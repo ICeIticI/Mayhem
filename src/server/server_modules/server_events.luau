@@ -65,11 +65,11 @@ local function receiveServerInvoke(plr, protocol, data)
         local config = ModuleLoader.Gun.gunPresets[data.name .. "_Preset"]
         
         if config then
+
+            local currentEquippedGunName = ModuleLoader.WeaponsMarket:GetEquippedWeaponName(plr)
             
             -- do we own the gun?
             local ownedWeapons = ModuleLoader.WeaponsMarket:GetWeaponsAccount(plr)
-            -- Checks if the desired weapon is equipped:
-            local equippedWeapon = ModuleLoader.utilities.FindChildByNameWhichIsA(plr.Backpack, data.name, "Tool") or ModuleLoader.utilities.FindChildByNameWhichIsA(plr.Character, data.name, "Tool")
             
             print(ownedWeapons[data.name], plrGun)
             if ownedWeapons[data.name] and ownedWeapons[data.name].equipped then -- The weapon is equipped already
@@ -78,19 +78,20 @@ local function receiveServerInvoke(plr, protocol, data)
                     plrGun:Remove()
                 end
                 ModuleLoader.WeaponsMarket:AddWeaponToWeaponsAccount(plr, config.name, false)
+                currentEquippedGunName = nil
                 return false
 
             elseif ownedWeapons[data.name] and not ownedWeapons[data.name].equipped then -- The weapon is unequipped
 
-                -- -- For now we only allow one weapon to be equipped, which is intended to be changed later:
-                -- if plrGun and plrGun.name then -- unequips current weapon:
-                -- ModuleLoader.WeaponsMarket:AddWeaponToWeaponsAccount(plr, plrGun.name, false)
-                -- plrGun:Remove()
-                -- end
+                -- For now we only allow one weapon to be equipped, which is intended to be changed later:
+                if currentEquippedGunName then -- unequips current weapon:
+                    ModuleLoader.WeaponsMarket:AddWeaponToWeaponsAccount(plr, currentEquippedGunName, false)
+                end
             
                 -- plrGun = ModuleLoader.Gun.new(plr.Character, config)
                 -- plrGun.tool.Parent = plr.Backpack
-                ModuleLoader.WeaponsMarket:AddWeaponToWeaponsAccount(plr, config.name, true)
+                currentEquippedGunName = config.name
+                ModuleLoader.WeaponsMarket:AddWeaponToWeaponsAccount(plr, currentEquippedGunName, true)
 
                 return true
 

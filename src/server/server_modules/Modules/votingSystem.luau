@@ -64,7 +64,6 @@ function votingSystem.activateVoting()
         station:SetAttribute("optionName", pickedValue)
     end
 
-    print("G")
     RemoteEvent:FireAllClients("updateVotes", {votingOptions = votingSystem.votingOptions})
     votingSystem.canVote = true
 

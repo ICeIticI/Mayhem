@@ -6,6 +6,17 @@ local RemoteFunction = game.ReplicatedStorage:WaitForChild("RemoteFunction")
 
 local shopManager = {}
 
+local function trackEquip(plr, valueName) -- for the UI. Will track when a weapon gets equipped or unequipped by the value name
+    local value = plr.ownedWeapons:FindFirstChild(valueName)
+
+    if not value then return warn("no value with the given name " .. valueName) end
+
+    print("tracking value: " .. value.Name)
+    value:GetPropertyChangedSignal("Value"):Connect(function()
+        shopManager.buttons[valueName]:SwapParents(value.Value)
+    end)
+end
+
 local function getPriceOfProductInRobux(productId)
     local success, productInfo = pcall(function()
         return MarketplaceService:GetProductInfo(productId, Enum.InfoType.Product)
@@ -31,7 +42,7 @@ local function initiatePurchaseButton(itemToDisplay, isLocked)
     button.item:PivotTo(CFrame.new(0, 3.5, 6.5))
 
     -- Methods:
-
+    
     function button:MissingRequiredToPurchase(message, amountMissingForPurchase) -- runs if the player is missing kills or cash in order to purchase the weapon
         -- they should be prompted to purchase this gun with robux or purchase more cash
             
@@ -67,7 +78,7 @@ local function initiatePurchaseButton(itemToDisplay, isLocked)
         shopManager.equipPurchase_screen.purchaseWithRobuxFrame.Visible = false
         shopManager.equipPurchase_screen.TextLabel.Text = "Thank you! You now own the " ..tostring(self.item.name) .. "!"
         shopManager.promptToPurchaseWithRobux = false
-end
+    end
 
     -- Connections:
 
@@ -100,9 +111,12 @@ end
     
     -- if the gun is already equipped, put it in equipped section. If not, then unequipped section:
     local gunToolBool = ModuleLoader.ClientVariables.player.ownedWeapons:FindFirstChild(button.item.Name)
+    if gunToolBool then
+        trackEquip(ModuleLoader.ClientVariables.player, button.item.Name)
+    end
     if gunToolBool and gunToolBool.Value then
         button:SwapParents(true)
-    elseif gunToolBool then
+    else
         button:SwapParents(false)
     end
     
@@ -230,6 +244,10 @@ function shopManager.init()
     
     shopManager.ShopButton.Activated:Connect(function()
         shopManager.shop_frame.Visible = not shopManager.shop_frame.Visible
+    end)
+
+    ModuleLoader.ClientVariables.player.ownedWeapons.ChildAdded:Connect(function(child)
+        trackEquip(ModuleLoader.ClientVariables.player, child.Name)
     end)
 end
 
