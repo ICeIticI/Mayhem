@@ -74,10 +74,25 @@ function ClientVariables.init()
         
                 local scoreLabel = Instance.new("TextLabel")
                 scoreLabel.Text = tostring(score)
-                scoreLabel.Size = UDim2.new(0.4, 0, 1, 0)
-                scoreLabel.Position = UDim2.new(0.6, 0, 0, 0)
+                scoreLabel.Size = UDim2.fromScale(0.4, 1)
+                scoreLabel.Position = UDim2.fromScale(0.6, 0)
                 scoreLabel.Parent = row
             end
+        end,
+
+        displayHitMarker = function(data) -- function thats pausable and resumable
+            ClientVariables.Gun_GUI.hitMarker[data.hitType .. "_HitMarker"].Position = UDim2.fromScale(0.5, 0.5) -- center of screen
+            
+            ClientVariables.Gun_GUI.hitMarker["body_HitMarker"].Visible = false
+            ClientVariables.Gun_GUI.hitMarker["headshot_HitMarker"].Visible = false
+            
+            data.hitSound:Play()
+            ClientVariables.Gun_GUI.hitMarker[data.hitType .. "_HitMarker"].Visible = true
+            
+            task.wait(0.1)
+            ClientVariables.Gun_GUI.hitMarker["body_HitMarker"].Visible = false
+            ClientVariables.Gun_GUI.hitMarker["headshot_HitMarker"].Visible = false
+            
         end
     }
 end

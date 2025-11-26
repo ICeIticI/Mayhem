@@ -33,6 +33,7 @@ ModuleLoader.ClientVariables.init()
 task.spawn(function()
     ModuleLoader.Seasonal.init()
     ModuleLoader.invite_friends.init()
+    ModuleLoader.afkButton.init()
     ModuleLoader.client_events.init()
     ModuleLoader.shopManager.init()
 end)
@@ -71,6 +72,7 @@ end)
 
 ModuleLoader.ClientVariables.Gun_GUI.round_leaderboard.Visible = false
 ModuleLoader.ClientVariables.Gun_GUI.ShopButton.Visible = false
+ModuleLoader.ClientVariables.Gun_GUI.AfkButton.Visible = false
 ModuleLoader.ClientVariables.Gun_GUI.shop_frame.Visible = false
 ModuleLoader.ClientVariables.Gun_GUI.Cash_Display.Visible = false
 ModuleLoader.ClientVariables.Gun_GUI.Kills_Display.Visible = false
@@ -122,11 +124,12 @@ local function onCharacterAdded(character)
     -- ModuleLoader.ClientVariables.camera.CameraType = Enum.CameraType.Orbital
     -- ModuleLoader.ClientVariables.Gun_GUI:WaitForChild("PlayButton").Visible = true
     -- ModuleLoader.ClientVariables.Gun_GUI.Game_Title.Visible = true
+        ModuleLoader.ClientVariables.Gun_GUI.round_leaderboard.Visible = false
     ModuleLoader.ClientVariables.Gun_GUI.ShopButton.Visible = true
     ModuleLoader.ClientVariables.Gun_GUI.Cash_Display.Visible = true
     ModuleLoader.ClientVariables.Gun_GUI.Kills_Display.Visible = true
     ModuleLoader.ClientVariables.Gun_GUI.InviteButton.Visible = true
-    ModuleLoader.ClientVariables.Gun_GUI.round_leaderboard.Visible = false
+    ModuleLoader.ClientVariables.Gun_GUI.AfkButton.Visible = true
 
     local onChildAddedConnect, onChildRemovedConnect
     local parent = ModuleLoader.ClientVariables.player.Backpack
@@ -217,7 +220,6 @@ ModuleLoader.ClientVariables.Gun_GUI.PlayButton.Activated:Connect(function()
     ModuleLoader.ClientVariables.Gun_GUI.Cash_Display.Visible = false
     ModuleLoader.ClientVariables.Gun_GUI.Kills_Display.Visible = false
     ModuleLoader.ClientVariables.Gun_GUI.InviteButton.Visible = false
-    ModuleLoader.ClientVariables.Gun_GUI.round_leaderboard.Visible = true
 
     ModuleLoader.ClientVariables.menuMusic:Stop()
     

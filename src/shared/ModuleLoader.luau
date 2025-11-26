@@ -18,7 +18,9 @@ function ModuleLoader.init()
         -- Runs for the client:
         for _, v in pairs(ClientScripts:GetDescendants()) do
             if v:IsA("ModuleScript") then
-                ModuleLoader[v.Name] = require(v)
+                pcall(function()
+                    ModuleLoader[v.Name] = require(v)
+                end)
             end
         end 
     end

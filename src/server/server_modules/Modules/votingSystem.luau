@@ -64,9 +64,12 @@ function votingSystem.activateVoting()
         station:SetAttribute("optionName", pickedValue)
     end
 
-    RemoteEvent:FireAllClients("updateVotes", {votingOptions = votingSystem.votingOptions})
+    votingSystem.updateVotesForClients()
     votingSystem.canVote = true
+end
 
+function votingSystem.updateVotesForClients()
+    RemoteEvent:FireAllClients("updateVotes", {votingOptions = votingSystem.votingOptions})
 end
 
 function votingSystem.finishVoting()

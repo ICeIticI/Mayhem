@@ -54,7 +54,13 @@ local function receiveClientEvent(protocol, data)
 		UserInputService.MouseIcon = ModuleLoader.ClientVariables.gunCursor
 
 	elseif protocol == "characterHit" then
-		data.hitSound:Play()
+		if ModuleLoader.ClientVariables.displayHitMarkerCoroutine then
+			coroutine.close(ModuleLoader.ClientVariables.displayHitMarkerCoroutine)
+		end
+		ModuleLoader.ClientVariables.displayHitMarkerCoroutine = coroutine.create(function()
+			ModuleLoader.ClientVariables.functions.displayHitMarker(data)
+		end)
+		coroutine.resume(ModuleLoader.ClientVariables.displayHitMarkerCoroutine)
 
 	-- This event gets called from a script in studio for restocking ammo:
 	elseif protocol == "lootBox" then
@@ -77,6 +83,7 @@ local function receiveClientEvent(protocol, data)
 		ModuleLoader.shopManager.buttons[data.weaponName]:closePurchase()
 
 	elseif protocol == "CountdownChange" then
+		ModuleLoader.ClientVariables.gamePeriod = data.gamePeriod
 
 		if data.winnerIdsTable and #data.winnerIdsTable > 0 then
 
@@ -107,8 +114,8 @@ local function receiveClientEvent(protocol, data)
 		ModuleLoader.ClientVariables.tracks[data.animName]:Stop()
 
 
-	elseif protocol == "revealJuggernaut" then
-		ModuleLoader.ClientVariables.revealGUI.Parent = Players:FindFirstChild(data.chosenBeastName).Character:WaitForChild("Head")
+	-- elseif protocol == "revealJuggernaut" then
+	-- 	ModuleLoader.ClientVariables.revealGUI.Parent = Players:FindFirstChild(data.chosenBeastName).Character:WaitForChild("Head")
 
 	elseif protocol == "updateVotes" then
 		for _, v in pairs(ModuleLoader.ClientVariables.votingStations:GetDescendants()) do
@@ -127,7 +134,10 @@ local function receiveClientEvent(protocol, data)
 		ModuleLoader.ClientVariables.Gun_GUI.shop_frame.Visible = false
 		ModuleLoader.ClientVariables.Gun_GUI.Cash_Display.Visible = false
 		ModuleLoader.ClientVariables.Gun_GUI.Kills_Display.Visible = false
+		ModuleLoader.ClientVariables.Gun_GUI.AfkButton.Visible = false
 
+	elseif protocol == "displayRoundLeaderboard" then
+		ModuleLoader.ClientVariables.Gun_GUI.round_leaderboard.Visible = true
 	end
 end
 

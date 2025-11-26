@@ -1,11 +1,12 @@
 local Players = game:GetService("Players")
 local ServerScriptService = game:GetService("ServerScriptService")
 
-local RemoteEvent = game:GetService("ReplicatedStorage"):WaitForChild("RemoteEvent")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent")
 local ServerStorage = game:GetService("ServerStorage")
 local Teams = game:GetService("Teams")
 
-local ModuleLoader = require(game:GetService("ReplicatedStorage").Shared.ModuleLoader)
+local ModuleLoader = require(ReplicatedStorage.Shared.ModuleLoader)
 
 local games = {}
 
@@ -14,6 +15,7 @@ function games.init()
     games.currentRoundPlayers = {}
     games.playerScores = {}
     games.winnerIdsTable = {} -- will be the id of the game winner to announce to each client
+    games.killsTrackerConnect = {}
     
     games.gamePeriod = "Ongoing"
     games.countdown = ModuleLoader.utilities.createInstance("IntValue", {Name = "Countdown", Value = 0})
@@ -27,33 +29,37 @@ function games.init()
             timer = 120,
             roundReward = 200,
             run = function() -- Determines how scoring will work for FFA
-                for _, player in pairs(games.currentRoundPlayers) do
-    
-                    -- for free-for-all, we track kills and add that to playerScores:
-                    local killsTrackerConnect
-                    killsTrackerConnect = ModuleLoader.WeaponsMarket:GetKillsAccount(player):GetPropertyChangedSignal("Value"):Connect(function()
-                        games.playerScores[player.UserId] += 1
-                    end)
-    
-                    -- disconnect tracking kills after the round ends:
-                    local timerTrackerConnect
-                    timerTrackerConnect = games.countdown:GetPropertyChangedSignal("Value"):Connect(function()
-                        if games.countdown.Value == 0 and games:getGamePeriod() == "Ongoing" then
+
+                -- for _, player in pairs(games.currentRoundPlayers) do
+                --     -- for free-for-all, we track kills and add that to playerScores:
+                --     games.killsTrackerConnect[player.UserId] = ModuleLoader.WeaponsMarket:GetKillsAccount(player):GetPropertyChangedSignal("Value"):Connect(function()
+                --         games.playerScores[player.UserId] += 1
+                --     end)
+                -- end
+                
+                -- disconnect tracking kills after the round ends:
+                local timerTrackerConnect
+                timerTrackerConnect = games.countdown:GetPropertyChangedSignal("Value"):Connect(function()
+                    
+                    if games.countdown.Value == 0 and games:getGamePeriod() == "Ongoing" then
+                        
+                        for _, plr in pairs(games.currentRoundPlayers) do
+                            games.killsTrackerConnect[plr.UserId]:Disconnect()
+                        end
+                        timerTrackerConnect:Disconnect()
+
+                        local max = 0 -- starts the comparison with the smallest possible number.
+                        for plrId, score in pairs(games.playerScores) do
                             
-                            killsTrackerConnect:Disconnect()
-                            timerTrackerConnect:Disconnect()
-    
-                            local max = 0 -- starts the comparison with the smallest possible number.
-                            for plrId, score in pairs(games.playerScores) do
-                                if score > max then
-                                    max = score
-                                    table.clear(games.winnerIdsTable) -- clear old winner
-                                    table.insert(games.winnerIdsTable, plrId) -- add new winner
-                                end
+                            if score > max then
+                                max = score
+                                table.clear(games.winnerIdsTable) -- clear old winner
+                                table.insert(games.winnerIdsTable, plrId) -- add new winner
                             end
                         end
-                    end)
-                end
+                        table.clear(games.killsTrackerConnect)
+                    end
+                end)
             end
         },
     
@@ -66,13 +72,15 @@ function games.init()
                 -- prepare teams:
                 local Beast_Team = ServerStorage.TeamsStorage:FindFirstChild("Juggernaut") or Teams:FindFirstChild("Juggernaut")
                 local Neutral_Team = ServerStorage.TeamsStorage:FindFirstChild("Neutral") or Teams:FindFirstChild("Neutral")
-                Beast_Team.Parent = Teams
-                Neutral_Team.Parent = Teams
-    
+                
+                local beastLabel = ReplicatedStorage.revealGUI
                 -- because we wannt randomly pick a player, we cant use a dictionary to choose a random index, so we turn it to a table.
                 local currentRoundPlayers_TableVersion = ModuleLoader.utilities.makeTableFromDictionaryValues(games.currentRoundPlayers)
                 local randomBeastIndex = math.random(1, #currentRoundPlayers_TableVersion)
-    
+                
+                Beast_Team.Parent = Teams
+                Neutral_Team.Parent = Teams
+
                 local chosenBeast
                 local beastHealthMultiplier = 1 -- every player that is in the round will multiply the beast health
                 for i, player in pairs(currentRoundPlayers_TableVersion) do
@@ -92,8 +100,8 @@ function games.init()
                 end
                 chosenBeast.Character.Humanoid.MaxHealth *= 8 * beastHealthMultiplier
                 chosenBeast.Character.Humanoid.Health = chosenBeast.Character.Humanoid.MaxHealth
-                RemoteEvent:FireAllClients("revealJuggernaut", {chosenBeastName = chosenBeast.Name})
-    
+                beastLabel.Parent = Players:FindFirstChild(chosenBeast.Name).Character:WaitForChild("Head")
+                
                 local diedConnect
                 diedConnect = chosenBeast.CharacterRemoving:Connect(function()
                     warn("Tracking beast and hes dead lol", chosenBeast)
@@ -110,6 +118,7 @@ function games.init()
                 local timerTrackerConnect
                 timerTrackerConnect = games.countdown:GetPropertyChangedSignal("Value"):Connect(function()
                     if games.countdown.Value == 0 and (games.gamePeriod == "Ongoing" or games.gamePeriod == "Ended") then
+                        beastLabel = ReplicatedStorage
                         diedConnect:Disconnect()
                         timerTrackerConnect:Disconnect()
                     end
@@ -139,6 +148,13 @@ function games.spawnCharacter(plr)
         warn("not ongoing")
         char.HumanoidRootPart.Anchored = true
     end
+
+    RemoteEvent:FireClient(plr, "hideSideUI")
+
+    print(games.chosenGamemode.gamemode_name)
+    if games.chosenGamemode.gamemode_name == "Free For All" then
+        RemoteEvent:FireClient(plr, "displayRoundLeaderboard")
+    end
 end
 
 function games.addPlayerToRound(player)
@@ -152,6 +168,12 @@ function games.addPlayerToRound(player)
     --     warn("not ongoing")
     --     player.Character.HumanoidRootPart.Anchored = true
     -- end
+    if games.chosenGamemode.gamemode_name == "Free For All" then
+        -- for free-for-all, we track kills and add that to playerScores:
+        games.killsTrackerConnect[player.UserId] = ModuleLoader.WeaponsMarket:GetKillsAccount(player):GetPropertyChangedSignal("Value"):Connect(function()
+            games.playerScores[player.UserId] += 1
+        end)
+    end
 end
 
 function games.run()
@@ -168,26 +190,27 @@ function games.run()
     games.gamePeriod = "Intermission"
     games.countdown.Value = 30
     for i = games.countdown.Value, 0, -1 do
+        ModuleLoader.votingSystem.updateVotesForClients()
         games.countdown.Value = i
         task.wait(1)
     end
 
     -- Pick gamemode based off votes, or randomly select one if none:
-    local chosenGamemode
     local chosenGamemodeName = ModuleLoader.votingSystem.finishVoting()
     if chosenGamemodeName then     
         for _, gamemode in pairs(games.gamemodes) do
             if gamemode.gamemode_name == chosenGamemodeName then
-                chosenGamemode = gamemode
+                games.chosenGamemode = gamemode
             end
         end
     else
-        chosenGamemode = games.gamemodes[math.random(1, #games.gamemodes)]
+        games.chosenGamemode = games.gamemodes[math.random(1, #games.gamemodes)]
+        chosenGamemodeName = games.chosenGamemode.gamemode_name
     end
     -- chosenGamemode = games.gamemodes[1] -- ! DELETE WHEN DONE TESTING !
 
 
-    games.gamePeriod = "Chosen gamemode: " ..tostring(chosenGamemode.gamemode_name)
+    games.gamePeriod = "Chosen gamemode: " ..tostring(games.chosenGamemode.gamemode_name)
 
     -- Gather the players:
     for _, player in pairs(game.Players:GetPlayers()) do -- currentRoundPlayers gets added as players join the game and press Play
@@ -202,12 +225,10 @@ function games.run()
             task.wait()
         end
         player:LoadCharacter()
-
-        RemoteEvent:FireClient(player, "hideSideUI")
     end
 
     -- Restart intermission if not enough players:
-    if game:GetService("RunService"):IsStudio() then -- not concerned about the # of players in studio testing
+    if not game:GetService("RunService"):IsStudio() then -- not concerned about the # of players in studio testing
         if ModuleLoader.utilities.getLength(games.currentRoundPlayers) < 2 then
             games.gamePeriod = "Not enough players. Restarting intermission.."
             games.countdown.Value = 3
@@ -225,7 +246,7 @@ function games.run()
         task.wait(1)
     end
     -- Ready the gamemode:
-    chosenGamemode.run()
+    games.chosenGamemode.run()
 
     for _, weapon in pairs(ModuleLoader.Gun.activeGuns) do
         weapon:SetAmmoToDefault()
@@ -245,14 +266,14 @@ function games.run()
         warn("Let the games begin!")
         
         for _, player in pairs(games.currentRoundPlayers) do
-            if not player.IsLoaded then continue end
+            -- if not player.IsLoaded then continue end
             player.Character.HumanoidRootPart.Anchored = false
         end
         games.gamePeriod = "Ongoing"
     
     
         -- Start a timer to countdown until match ends:
-        games.countdown.Value = chosenGamemode.timer
+        games.countdown.Value = games.chosenGamemode.timer
         for i = games.countdown.Value, 0, -1 do
             games.countdown.Value = i
             task.wait(1)
@@ -273,7 +294,7 @@ function games.run()
             for _, winnerId in pairs(games.winnerIdsTable) do
                 local winner = Players:GetPlayerByUserId(winnerId)
                 warn(winner)
-                ModuleLoader.WeaponsMarket:AwardCash(winner, chosenGamemode.roundReward)
+                ModuleLoader.WeaponsMarket:AwardCash(winner, games.chosenGamemode.roundReward)
             end
         end
         

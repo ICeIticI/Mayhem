@@ -30,6 +30,7 @@ ModuleLoader.server_events.init()
 local function onCharacterAdded(char)
 
     char:WaitForChild("Humanoid").JumpHeight = 5
+    char.Humanoid.WalkSpeed = 12
     
     -- char:WaitForChild("HumanoidRootPart").Anchored = true
     char.HumanoidRootPart.CFrame = game:GetService("Workspace").Pre_Spawn.center.CFrame
@@ -62,6 +63,10 @@ local function onCharacterAdded(char)
         -- make sure bullets cant collide with accessories
         ModuleLoader.utilities.filterCharacterObjects(char, {["Accessory"] = true})
 
+        if ModuleLoader.games:getGamePeriod() ~= "Intermission" or ModuleLoader.games:getGamePeriod() ~= "Ended" then
+            RemoteEvent:FireClient(player, "hideSideUI")
+        end
+        RemoteEvent:FireClient(player, "onUnequipped", {isEquipped = false})
     end
 
     -- if plr.IsLoaded.Value then return end -- character should not exist when the play button is pressed
@@ -106,7 +111,6 @@ local function onPlayerAdded(player)
 
     -- task.wait(1)
     RemoteEvent:FireClient(player, "readyToInitButtons")
-    
 end
 
 local function onPlayerRemove(player)

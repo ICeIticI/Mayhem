@@ -19,13 +19,22 @@ end
 
 
 function WeaponsMarket:InitiateAccounts(plr)
+    local leaderstats = Instance.new("Folder")
+    leaderstats.Name = "leaderstats"
+    leaderstats.Parent = plr
+
     killsAccounts[plr.UserId] = Instance.new("NumberValue")
+    killsAccounts[plr.UserId].Name = "Kills"
+
+    killsAccounts[plr.UserId].Parent = leaderstats
     killsAccounts[plr.UserId]:GetPropertyChangedSignal("Value"):Connect(function()
         RemoteEvent:FireClient(plr, "changeUiDisplay", {UIToChange = "Kills_Display", killsAmount = killsAccounts[plr.UserId].Value})
     end)
 
     local previousCashAmount = 0 -- for the new value, used to track how much has been added/removed from the old
     cashAccounts[plr.UserId] = Instance.new("IntValue")
+    cashAccounts[plr.UserId].Name = "Cash"
+    cashAccounts[plr.UserId].Parent = leaderstats
     cashAccounts[plr.UserId]:GetPropertyChangedSignal("Value"):Connect(function()
         RemoteEvent:FireClient(plr, "changeUiDisplay", {UIToChange = "Cash_Display", cashAmount = cashAccounts[plr.UserId].Value, difference = cashAccounts[plr.UserId].Value - previousCashAmount})
         previousCashAmount = cashAccounts[plr.UserId].Value

@@ -39,7 +39,7 @@ local function initiatePurchaseButton(itemToDisplay, isLocked)
     button.instance.Visible = true
 
     button.item = itemToDisplay
-    button.item:PivotTo(CFrame.new(0, 3.5, 6.5))
+    button.item:PivotTo(CFrame.new(0, 3, 5))
 
     -- Methods:
     
@@ -143,7 +143,7 @@ function shopManager.init()
     shopManager.UI_PRIMARY_COLOR = Color3.fromRGB(255, 106, 0)
     shopManager.UI_SECONDARY_COLOR = Color3.fromRGB(0,0,0)
 
-    shopManager.UI_SELECTION_SIZE = UDim2.fromScale(0.496,0.333)
+    shopManager.UI_SELECTION_SIZE = UDim2.fromScale(0.32, 0.15)
     shopManager.UI_EQUIPPED_SIZE = UDim2.fromScale(1,1)
 
     for _, child in pairs(shopManager.ScreenGui:GetDescendants()) do

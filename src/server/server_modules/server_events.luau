@@ -20,10 +20,18 @@ local function receiveServerEvent(plr, protocol, data)
 
 
     local inputType = ModuleLoader.utilities.checkInput(data.input)
-    if not inputType and protocol ~= "move_arms" then return end -- only allow specific inputs
-
+    if not inputType and (protocol ~= "move_arms" and protocol ~= "afkSwap") then return end -- only allow specific inputs
+    
     local plrGun = ModuleLoader.Gun.activeGuns[plr.Name]
-    if (not plrGun or not plrGun.isEquipped or ModuleLoader.games.getGamePeriod() ~= "Ongoing") and protocol ~= "move_arms" then return end -- they should absolutely have their gun equipped to use it
+    -- For weapon-specific protocols, we must have an equipped weapon or we will not accept the player input:
+    if protocol == "inputStarted" or protocol == "inputEnded" then
+        if (
+            not plrGun 
+            or not plrGun.isEquipped 
+            or ModuleLoader.games.getGamePeriod() ~= "Ongoing"
+        ) 
+        and protocol ~= "move_arms" then return end -- they should absolutely have their gun equipped to use it
+    end
 
 
     if protocol == "inputStarted" then
@@ -52,6 +60,9 @@ local function receiveServerEvent(plr, protocol, data)
             torso:WaitForChild("Right Shoulder").C0 = data.RightC0
             torso:WaitForChild("Left Shoulder").C0 = data.LeftC0
         -- end
+
+    elseif protocol == "afkSwap" then
+        plr.IsLoaded.Value = not plr.IsLoaded.Value
     end
 end
 
@@ -63,7 +74,7 @@ local function receiveServerInvoke(plr, protocol, data)
         local kills = ModuleLoader.WeaponsMarket:GetKillsAccount(plr).Value
         
         local config = ModuleLoader.Gun.gunPresets[data.name .. "_Preset"]
-        
+        print("HIHI")
         if config then
 
             local currentEquippedGunName = ModuleLoader.WeaponsMarket:GetEquippedWeaponName(plr)
@@ -82,7 +93,7 @@ local function receiveServerInvoke(plr, protocol, data)
                 return false
 
             elseif ownedWeapons[data.name] and not ownedWeapons[data.name].equipped then -- The weapon is unequipped
-
+                warn("G")
                 -- For now we only allow one weapon to be equipped, which is intended to be changed later:
                 if currentEquippedGunName then -- unequips current weapon:
                     ModuleLoader.WeaponsMarket:AddWeaponToWeaponsAccount(plr, currentEquippedGunName, false)

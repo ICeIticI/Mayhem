@@ -93,8 +93,8 @@ function Gun.init() -- initializes the Gun module
 	
 			},
 	
-			cost = 10000,
-			killsRequired = 15,
+			cost = 2000,
+			killsRequired = 75,
 			productId = 3418859869,
 			description = "Assault Rifle descended from the legendary AK-47 modernized.",
 			
@@ -102,9 +102,9 @@ function Gun.init() -- initializes the Gun module
 			fullAuto = true,
 			damage = 34,
 	
-			sprintSpeedMultiplier = 1.4, -- May change in the future, especially if attachments cause weigh-down, but not our concern as of now.
+			sprintSpeedMultiplier = 1.6, -- May change in the future, especially if attachments cause weigh-down, but not our concern as of now.
 			animationSpeedMultiplier = 1, -- Higher numbers increase animation speed, such as for reloading
-			reloadDuration = 2.3,
+			reloadDuration = 3.5,
 			tacticalReloadDuration = 2.3,
 			tacticalReloadSoundStart = 0, -- some guns start later in the sound reload cause of weird thing they do first like MP5
 	
@@ -179,8 +179,8 @@ function Gun.init() -- initializes the Gun module
 	
 			},
 	
-			cost = 2000,
-			killsRequired = 15,
+			cost = 800,
+			killsRequired = 30,
 			productId = 3418859796,
 			description = "Accurate military-grade SMG with high firerate.",
 			
@@ -188,7 +188,7 @@ function Gun.init() -- initializes the Gun module
 			fullAuto = true,
 			damage = 27,
 	
-			sprintSpeedMultiplier = 1.5, -- May change in the future, especially if attachments cause weigh-down, but not our concern as of now.
+			sprintSpeedMultiplier = 1.7, -- May change in the future, especially if attachments cause weigh-down, but not our concern as of now.
 			animationSpeedMultiplier = 1,
 			reloadDuration = 3,
 			tacticalReloadDuration = 2,
@@ -275,7 +275,7 @@ function Gun.init() -- initializes the Gun module
 			fullAuto = false,
 			damage = 40,
 	
-			sprintSpeedMultiplier = 1.6, -- May change in the future, especially if attachments cause weigh-down, but not our concern as of now.
+			sprintSpeedMultiplier = 1.8, -- May change in the future, especially if attachments cause weigh-down, but not our concern as of now.
 			animationSpeedMultiplier = 1,
 			reloadDuration = 2.2,
 			tacticalReloadDuration = 1.3,
@@ -356,8 +356,8 @@ function Gun.init() -- initializes the Gun module
 	
 			},
 	
-			cost = 10000,
-			killsRequired = 20,
+			cost = 1000,
+			killsRequired = 50,
 			productId = 3436527826,
 			description = "Bolt-action rifle feared by many, especially during WW2.",
 			
@@ -365,7 +365,7 @@ function Gun.init() -- initializes the Gun module
 			fullAuto = false,
 			damage = 80,
 	
-			sprintSpeedMultiplier = 1.35, -- May change in the future, especially if attachments cause weigh-down, but not our concern as of now.
+			sprintSpeedMultiplier = 1.4, -- May change in the future, especially if attachments cause weigh-down, but not our concern as of now.
 			animationSpeedMultiplier = 1,
 			reloadDuration = 4,
 			tacticalReloadDuration = 3, -- for the Kar98k, this is a per-bullet reload duration.
@@ -443,6 +443,180 @@ function Gun.init() -- initializes the Gun module
 				self.Animations.BoltForward:StopAnimation()
 			end
 	
+		},
+
+		["AK-47_Preset"] = {
+			name = "AK-47",
+			tool = GunToolPresets["AK-47"],
+	
+			animations = {
+				Idle = {Name = "Idle", AnimationId ="rbxassetid://106649225111320"},
+				Recoil = {Name = "Recoil", AnimationId = "rbxassetid://92622778596257"},
+				Reload = {Name = "Reload", AnimationId = "rbxassetid://113619058074395"},
+				Tact_Reload = {Name = "Tact_Reload", AnimationId = "rbxassetid://104827053097461"}
+			},
+	
+			sounds = {
+	
+			},
+	
+			cost = 1000,
+			killsRequired = 35,
+			productId = 3459134974,
+			description = "Famous Russian assault rifle known for its high reliability.",
+			
+			fireRate = 0.1000, -- bullets per second
+			fullAuto = true,
+			damage = 40,
+	
+			sprintSpeedMultiplier = 1.6, -- May change in the future, especially if attachments cause weigh-down, but not our concern as of now.
+			animationSpeedMultiplier = 1, -- Higher numbers increase animation speed, such as for reloading
+			reloadDuration = 3.5,
+			tacticalReloadDuration = 2.3,
+			tacticalReloadSoundStart = 0, -- some guns start later in the sound reload cause of weird thing they do first like MP5
+	
+			magCapacity = 30, -- how many bullets can fit in a clip
+			magCurrent = 30, -- how many bullets are currently in the clip
+			ammoMax = 180, -- the maximum amount of bullets the shooter can hold not in the clip
+			ammoCurrent = 90, -- how many bullets the shooter is holding not in the clip
+	
+			fireAction = function(self, castBehavior, chamberBehavior, startPosition, direction, otherStartPosition, otherDirection)
+				
+				self.bulletCaster:Fire(startPosition, direction, 1000, castBehavior) -- like a normal raycast, with the startPosition as the first parameter, and the direction as the second. Except the third parameter is a velocity value. It can be a number, or a Vector3 value
+				self.chamberCaster:Fire(otherStartPosition, otherDirection, 10, chamberBehavior)
+				self.Gun_Sounds.Gunshot:Play()
+				self.Animations.Recoil:PlayAnimation()
+				self.bulletFlash.Enabled = true
+				task.delay(0.1, function()
+				self.bulletFlash.Enabled = false
+				end)
+				task.delay(3, function()
+					for i = 0,300,1 do
+						if self.isHolding ~= true then
+							break			
+						elseif i == 300 then
+							self.bulletSmoke.Enabled = true
+							task.delay(15,function()
+								self.bulletSmoke.Enabled = false
+							end)
+						end
+					end
+				end)
+	
+			end,
+			
+			reloadAction = function(self)
+				self.Animations.Reload:PlayAnimation()
+				self.Gun_Sounds.Reload:Play()
+				task.wait(self.reloadDuration * 0.357)
+				self.mag.Transparency = 1
+				task.wait(self.reloadDuration * 0.071)
+				self.mag.Transparency = 0
+				task.wait(self.reloadDuration * 0.571)
+			end,
+	
+			tacticalReloadAction = function(self)
+				self.Animations.Tact_Reload:PlayAnimation()
+				self.Gun_Sounds.Reload:Play()
+				task.delay(self.tacticalReloadDuration, function()
+					self.Gun_Sounds.Reload:Stop()
+				end)
+				self.Gun_Sounds.Reload.TimePosition = self.tacticalReloadSoundStart -- some guns get the weird startposition treatment due to the nature of a full reload vs tactical.
+				task.wait(self.tacticalReloadDuration * 0.543)
+				self.mag.Transparency = 1
+				task.wait(self.tacticalReloadDuration * 0.108)
+				self.mag.Transparency = 0
+				task.wait(self.tacticalReloadDuration * 0.347)
+				-- total wait() time should equal 'tactical reload duration'
+			end
+		},
+
+		["Desert Eagle_Preset"] = {
+			name = "Desert Eagle",
+			tool = GunToolPresets:WaitForChild("Desert Eagle"),
+	
+			animations = {
+				Idle = {Name = "Idle", AnimationId = "rbxassetid://96545754412370"},
+				Recoil = {Name = "Recoil", AnimationId = "rbxassetid://111613173793468"},
+				No_Ammo_Effect = {Name = "No_Ammo_Effect", AnimationId = "rbxassetid://106827566632974"},
+				Reload = {Name = "Reload", AnimationId = "rbxassetid://135064603104559"},
+				Tact_Reload = {Name = "Tact_Reload", AnimationId = "rbxassetid://103585591567351"}
+			},
+	
+			sounds = {
+	
+			},
+	
+			cost = 450,
+			killsRequired = 5,
+			productId = 3459135132,
+			description = "Powerful handgun with exceptional stopping power.",
+			
+			fireRate = 0.3,
+			fullAuto = false,
+			damage = 45,
+	
+			sprintSpeedMultiplier = 1.75, -- May change in the future, especially if attachments cause weigh-down, but not our concern as of now.
+			animationSpeedMultiplier = 1,
+			reloadDuration = 2.35,
+			tacticalReloadDuration = 1.75,
+			tacticalReloadSoundStart = 0, -- some guns start later in the sound reload cause of weird thing they do first like MP5
+	
+			magCapacity = 7, -- how many bullets can fit in a clip
+			magCurrent = 7, -- how many bullets are currently in the clip
+			ammoMax = 42, -- the maximum amount of bullets the shooter can hold not in the clip
+			ammoCurrent = 21, -- how many bullets the shooter is holding not in the clip
+	
+	
+			fireAction = function(self, castBehavior, chamberBehavior, startPosition, direction, otherStartPosition, otherDirection)
+				
+				self.bulletCaster:Fire(startPosition, direction, 1000, castBehavior) -- like a normal raycast, with the startPosition as the first parameter, and the direction as the second. Except the third parameter is a velocity value. It can be a number, or a Vector3 value
+				self.chamberCaster:Fire(otherStartPosition, otherDirection, 10, chamberBehavior)
+				self.Gun_Sounds.Gunshot:Play()
+				self.Animations.Recoil:PlayAnimation()
+				self.bulletFlash.Enabled = true
+				task.delay(0.1, function()
+				self.bulletFlash.Enabled = false
+				end)
+				task.delay(3, function()
+					for i = 0,300,1 do
+						if self.isHolding ~= true then
+							break			
+						elseif i == 300 then
+							self.bulletSmoke.Enabled = true
+							task.delay(15,function()
+								self.bulletSmoke.Enabled = false
+							end)
+						end
+					end
+				end)
+	
+			end,
+			
+			reloadAction = function(self)
+				self.Animations.Reload:PlayAnimation()
+				self.Gun_Sounds.Reload:Play()
+				task.wait(self.reloadDuration * 0.357)
+				self.mag.Transparency = 1
+				task.wait(self.reloadDuration * 0.071)
+				self.mag.Transparency = 0
+				task.wait(self.reloadDuration * 0.571)
+			end,
+	
+			tacticalReloadAction = function(self)
+				self.Animations.Tact_Reload:PlayAnimation()
+				self.Gun_Sounds.Reload:Play()
+				task.delay(self.tacticalReloadDuration, function()
+					self.Gun_Sounds.Reload:Stop()
+				end)
+				self.Gun_Sounds.Reload.TimePosition = self.tacticalReloadSoundStart -- some guns get the weird startposition treatment due to the nature of a full reload vs tactical.
+				task.wait(self.tacticalReloadDuration * 0.543)
+				self.mag.Transparency = 1
+				task.wait(self.tacticalReloadDuration * 0.108)
+				self.mag.Transparency = 0
+				task.wait(self.tacticalReloadDuration * 0.347)
+				-- total wait() time should equal 'tactical reload duration'
+			end
 		},
 	}
 	Gun.presetProductIds = {}
@@ -692,7 +866,7 @@ function Gun:Sprint()
 		-- Drain:
 		while self.isSprintPressed and self.currentSprintStamina.Value > 0 do
 			task.wait(0.1)
-			if self.shooter:WaitForChild("Humanoid").MoveDirection.Magnitude == 0 then 
+			if self.shooter:FindFirstChildWhichIsA("Humanoid").MoveDirection.Magnitude == 0 then 
 				if self.currentSprintStamina.Value >= self.sprintStamina.Value then continue end
 
 				self.currentSprintStamina.Value += 1
@@ -783,11 +957,11 @@ function Gun:BulletImpact(cast, result, velocity, bullet)
 		if resultHumanoid and resultHumanoid.Health > 0 then
 			if rayInstance == rayInstance.Parent:FindFirstChild("Head") then
 				-- print("You hit "..tostring(rayInstance.Parent) .." by headshot!")
-				RemoteEvent:FireClient(self.plr, "characterHit", {hitSound = self.Gun_Sounds.Headshot})
+				RemoteEvent:FireClient(self.plr, "characterHit", {hitSound = self.Gun_Sounds.Headshot, hitType = "headshot"})
 				rayInstance.Parent.Humanoid:TakeDamage(self.damage*2)
 			else
 				-- print("You hit "..tostring(rayInstance.Parent) .."'s "..tostring(rayInstance.Name))
-				RemoteEvent:FireClient(self.plr, "characterHit", {hitSound = self.Gun_Sounds.Hit})
+				RemoteEvent:FireClient(self.plr, "characterHit", {hitSound = self.Gun_Sounds.Hit, hitType = "body"})
 				rayInstance.Parent.Humanoid:TakeDamage(self.damage)
 			end
 		
